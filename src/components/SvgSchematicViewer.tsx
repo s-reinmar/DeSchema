@@ -1,26 +1,19 @@
 /**
  * @file SvgSchematicViewer.tsx
- * @description Advanced vector schematic viewer engine with integrated controls and Show-Up popovers.
- * @author s-reinmar
+ * @description Advanced vector schematic viewer featuring manual pan/zoom, zoom-to-fit, and interactive annotations.
+ * @author @s-reinmar
  * @license MIT
  */
 
 import React, { useState, useRef } from 'react';
-import {
-  ChevronLeft,
-  ChevronRight,
-  FolderOpen,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Sparkles,
-  Layers,
-  CircuitBoard,
-  Info,
-} from 'lucide-react';
+import { Layers, Info, Move } from 'lucide-react';
 import type { Circuit, CircuitSummary, CircuitSymbol } from '../types/circuit.types.ts';
+import type { SchematicAnnotation } from '../types/annotation.types.ts';
 import { SymbolParser } from '../utils/symbol-parser.ts';
 import { SymbolShowUpPopover } from './SymbolShowUpPopover.tsx';
+import { useSchematicPanZoom } from '../hooks/useSchematicPanZoom.ts';
+import { SchematicControlsBar } from './schematic/SchematicControlsBar.tsx';
+import { SchematicAnnotationsLayer } from './schematic/SchematicAnnotationsLayer.tsx';
 
 interface Props {
   readonly circuit: Circuit;
@@ -31,6 +24,13 @@ interface Props {
   readonly onNextCircuit: () => void;
   readonly onOpenUploadModal: () => void;
 }
+
+const ANNOTATION_COLORS = [
+  'bg-amber-500/20 text-amber-300 border-amber-500/40',
+  'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+  'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+  'bg-purple-500/20 text-purple-300 border-purple-500/40',
+];
 
 export const SvgSchematicViewer: React.FC<Props> = ({
   circuit,
@@ -43,13 +43,49 @@ export const SvgSchematicViewer: React.FC<Props> = ({
 }) => {
   const [activeSymbol, setActiveSymbol] = useState<CircuitSymbol | null>(null);
   const [isPinned, setIsPinned] = useState(false);
-  const [zoomScale, setZoomScale] = useState(1);
+  const [isAnnotationMode, setIsAnnotationMode] = useState(false);
+  const [annotations, setAnnotations] = useState<readonly SchematicAnnotation[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const predefined = summaries.filter((s) => !s.isCustom);
-  const custom = summaries.filter((s) => s.isCustom);
+  const {
+    transform,
+    isDragging,
+    zoomIn,
+    zoomOut,
+    zoomToFit,
+    resetTransform,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleWheel,
+  } = useSchematicPanZoom();
+
+  const width = parseViewBoxWidth(circuit.svgViewBox);
+  const height = parseViewBoxHeight(circuit.svgViewBox);
 
   const handleSymbolClick = (sym: CircuitSymbol) => {
+    if (isAnnotationMode) {
+      // Toggle or add annotation for this symbol
+      const existing = annotations.find((a) => a.symbolId === sym.id);
+      if (existing) {
+        setAnnotations((prev) => prev.filter((a) => a.id !== existing.id));
+      } else {
+        const nextColor = ANNOTATION_COLORS[annotations.length % ANNOTATION_COLORS.length];
+        const newAnnotation: SchematicAnnotation = {
+          id: `ann-${Date.now()}-${sym.id}`,
+          symbolId: sym.id,
+          label: sym.label,
+          note: sym.explanation || 'Wybrany punkt schematu',
+          x: sym.x,
+          y: sym.y,
+          color: nextColor,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setAnnotations((prev) => [...prev, newAnnotation]);
+      }
+      return;
+    }
+
     if (activeSymbol?.id === sym.id && isPinned) {
       setIsPinned(false);
       setActiveSymbol(null);
@@ -60,123 +96,50 @@ export const SvgSchematicViewer: React.FC<Props> = ({
   };
 
   const handleSymbolHover = (sym: CircuitSymbol) => {
-    if (!isPinned) {
+    if (!isPinned && !isAnnotationMode) {
       setActiveSymbol(sym);
     }
   };
 
   const handleSymbolLeave = () => {
-    if (!isPinned) {
+    if (!isPinned && !isAnnotationMode) {
       setActiveSymbol(null);
     }
   };
 
-  const handleZoom = (delta: number) => {
-    setZoomScale((prev) => Math.min(Math.max(0.7, prev + delta), 1.8));
+  const handleRemoveAnnotation = (id: string) => {
+    setAnnotations((prev) => prev.filter((a) => a.id !== id));
   };
 
-  const handleResetZoom = () => {
-    setZoomScale(1);
+  const handleClearAnnotations = () => {
+    setAnnotations([]);
   };
 
   return (
     <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col transition-all">
-      {/* 4. Pasek sterowania układem nad schematem */}
-      <div className="p-3.5 sm:p-4 bg-slate-950/80 border-b border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Navigation buttons and circuit dropdown */}
-        <div className="flex items-center gap-2 flex-1">
-          <button
-            onClick={onPreviousCircuit}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-700/80 transition flex items-center justify-center shrink-0 active:scale-95"
-            title="Poprzedni schemat (< lub Strzałka w lewo)"
-            aria-label="Poprzedni schemat"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+      {/* 1. Integrated Controls Bar */}
+      <SchematicControlsBar
+        currentCircuitId={circuit.id}
+        summaries={summaries}
+        isAnnotationMode={isAnnotationMode}
+        annotationsCount={annotations.length}
+        onSelectCircuit={(id) => {
+          onSelectCircuit(id);
+          setActiveSymbol(null);
+          setIsPinned(false);
+        }}
+        onPreviousCircuit={onPreviousCircuit}
+        onNextCircuit={onNextCircuit}
+        onOpenUploadModal={onOpenUploadModal}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onZoomToFit={zoomToFit}
+        onResetZoom={resetTransform}
+        onToggleAnnotationMode={() => setIsAnnotationMode((prev) => !prev)}
+        onClearAnnotations={handleClearAnnotations}
+      />
 
-          <div className="relative flex-1 max-w-sm">
-            <select
-              value={circuit.id}
-              onChange={(e) => {
-                onSelectCircuit(e.target.value);
-                setActiveSymbol(null);
-                setIsPinned(false);
-              }}
-              className="w-full pl-3 pr-10 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm font-semibold text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none cursor-pointer truncate"
-            >
-              <optgroup label="Wbudowane schematy wzorcowe">
-                {predefined.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    ⚡ {SymbolParser.formatSymbol(item.title)}
-                  </option>
-                ))}
-              </optgroup>
-              {custom.length > 0 && (
-                <optgroup label="Własne wgrane schematy (localStorage)">
-                  {custom.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      📁 {SymbolParser.formatSymbol(item.title)}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-              <CircuitBoard className="w-4 h-4" />
-            </div>
-          </div>
-
-          <button
-            onClick={onNextCircuit}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-700/80 transition flex items-center justify-center shrink-0 active:scale-95"
-            title="Następny schemat (> lub Strzałka w prawo)"
-            aria-label="Następny schemat"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Right controls: Upload / Open button and Zoom tools */}
-        <div className="flex items-center justify-between md:justify-end gap-2 shrink-0">
-          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-            <button
-              onClick={() => handleZoom(0.15)}
-              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
-              title="Przybliż schemat"
-              aria-label="Przybliż"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => handleZoom(-0.15)}
-              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
-              title="Oddal schemat"
-              aria-label="Oddal"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <button
-              onClick={handleResetZoom}
-              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition text-xs font-mono"
-              title="Resetuj powiększenie (100%)"
-              aria-label="Dopasuj do okna"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <button
-            onClick={onOpenUploadModal}
-            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600/90 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 transition shrink-0"
-            title="Otwórz z lokalizacji / Wgraj układ z dysku"
-          >
-            <FolderOpen className="w-4 h-4" />
-            <span>Otwórz z lokalizacji / Wgraj układ</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Schematic Sub-header info */}
+      {/* 2. Sub-header info */}
       <div className="px-5 py-2.5 bg-slate-950/40 border-b border-slate-800/60 flex items-center justify-between text-xs text-slate-400 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Layers className="w-3.5 h-3.5 text-cyan-400" />
@@ -199,42 +162,59 @@ export const SvgSchematicViewer: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 1. Canvas Area rendering the Vector SVG Graphics */}
+      {/* 3. Interactive Pan/Zoom Canvas */}
       <div
         ref={containerRef}
-        className="relative p-4 sm:p-8 flex items-center justify-center bg-slate-950/90 overflow-hidden min-h-[380px] sm:min-h-[440px]"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
+        className={`relative p-4 sm:p-8 flex items-center justify-center bg-slate-950/90 overflow-hidden min-h-[400px] sm:min-h-[460px] select-none ${
+          isDragging ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
       >
-        {/* Subtle background blueprint grid */}
+        {/* Blueprint background grid */}
         <div
           className="absolute inset-0 opacity-[0.05] pointer-events-none"
           style={{
-            backgroundImage:
-              'radial-gradient(circle at 1px 1px, #06b6d4 1px, transparent 0)',
+            backgroundImage: 'radial-gradient(circle at 1px 1px, #06b6d4 1px, transparent 0)',
             backgroundSize: '24px 24px',
           }}
         />
 
-        {/* Scalable SVG Schematic Container */}
+        {/* Scalable & Pannable SVG Container */}
         <div
-          className="w-full max-w-3xl aspect-[16/9] max-h-[480px] flex items-center justify-center relative transition-transform duration-200 ease-out"
-          style={{ transform: `scale(${zoomScale})` }}
+          className="w-full max-w-3xl aspect-[16/9] max-h-[500px] flex items-center justify-center relative transition-transform duration-75 ease-out"
+          style={{
+            transform: `translate(${transform.translateX}px, ${transform.translateY}px) scale(${transform.scale})`,
+            transformOrigin: 'center center',
+          }}
         >
           <svg
             viewBox={circuit.svgViewBox}
-            className="w-full h-full text-slate-300 drop-shadow-lg select-none"
+            className="w-full h-full text-slate-300 drop-shadow-lg select-none pointer-events-none"
             dangerouslySetInnerHTML={{ __html: SymbolParser.sanitizeSvg(circuit.svgContent) }}
           />
 
-          {/* 2 & 3. Interactive Symbol Hotspots with Unicode / sub-sup and Show-Up Popover */}
+          {/* User Annotations Layer */}
+          <SchematicAnnotationsLayer
+            annotations={annotations}
+            viewBoxWidth={width}
+            viewBoxHeight={height}
+            onRemoveAnnotation={handleRemoveAnnotation}
+          />
+
+          {/* Interactive Symbol Hotspots */}
           {circuit.symbols.map((sym) => {
             const isActiveInStep = activeTargetSymbolIds.includes(sym.id);
             const isSelected = activeSymbol?.id === sym.id;
-            const width = parseViewBoxWidth(circuit.svgViewBox);
-            const height = parseViewBoxHeight(circuit.svgViewBox);
+            const hasAnnotation = annotations.some((a) => a.symbolId === sym.id);
 
             return (
               <div
                 key={sym.id}
+                data-no-pan="true"
                 onClick={() => handleSymbolClick(sym)}
                 onMouseEnter={() => handleSymbolHover(sym)}
                 onMouseLeave={handleSymbolLeave}
@@ -244,11 +224,12 @@ export const SvgSchematicViewer: React.FC<Props> = ({
                   top: `${(sym.y / height) * 100}%`,
                 }}
               >
-                {/* Visual pulse & halo for active or inspected symbols */}
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
                     isSelected
                       ? 'border-amber-400 bg-amber-500/30 shadow-[0_0_20px_rgba(251,191,36,0.9)] scale-125 z-30'
+                      : hasAnnotation
+                      ? 'border-amber-400 bg-amber-500/20 shadow-[0_0_12px_rgba(251,191,36,0.6)] scale-110'
                       : isActiveInStep
                       ? 'border-cyan-400 bg-cyan-500/25 shadow-[0_0_15px_rgba(6,182,212,0.8)] animate-pulse scale-110'
                       : 'border-slate-600 bg-slate-900/80 hover:border-indigo-400 opacity-75 hover:opacity-100 hover:scale-115'
@@ -263,7 +244,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
           })}
         </div>
 
-        {/* 3. Interactive "Show-Up" Popover Card */}
+        {/* Popover Card */}
         <SymbolShowUpPopover
           symbol={activeSymbol}
           isPinned={isPinned}
@@ -275,20 +256,29 @@ export const SvgSchematicViewer: React.FC<Props> = ({
         />
       </div>
 
-      {/* Bottom status helper bar */}
-      <div className="px-5 py-2.5 bg-slate-900/80 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+      {/* 4. Bottom status helper bar */}
+      <div className="px-5 py-2.5 bg-slate-900/80 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Info className="w-3.5 h-3.5 text-cyan-400" />
+          <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
           <span>
-            Najedź kursorem lub kliknij dowolny symbol (np.{' '}
-            <span className="font-mono text-cyan-300">{SymbolParser.formatSymbol('R_b1')}</span>,{' '}
-            <span className="font-mono text-cyan-300">{SymbolParser.formatSymbol('U_{in}')}</span>,{' '}
-            <span className="font-mono text-cyan-300">{SymbolParser.formatSymbol('D_z')}</span>
-            ), aby wyświetlić kartę Show-Up ze wzorami i rolą fizyczną.
+            {isAnnotationMode ? (
+              <span className="text-amber-300 font-medium">
+                Tryb adnotacji aktywny: kliknij dowolny komponent, aby dodać lub zdjąć znacznik.
+              </span>
+            ) : (
+              <span>
+                Przeciągaj myszą, aby przesuwać schemat • Kółko myszy = zoom • Przycisk &apos;Dopasuj&apos; = zoom-to-fit • Kliknięcie komponentu = karta &apos;Show-Up&apos;.
+              </span>
+            )}
           </span>
         </div>
-        <div className="hidden sm:flex items-center gap-1 font-mono text-[11px] text-slate-500">
-          <span>Skala: {Math.round(zoomScale * 100)}%</span>
+
+        <div className="flex items-center gap-2.5 font-mono text-[11px] text-slate-500">
+          <span className="flex items-center gap-1">
+            <Move className="w-3 h-3 text-slate-400" />
+            Pan: {Math.round(transform.translateX)}px, {Math.round(transform.translateY)}px
+          </span>
+          <span className="text-cyan-400 font-bold">Skala: {Math.round(transform.scale * 100)}%</span>
         </div>
       </div>
     </div>
