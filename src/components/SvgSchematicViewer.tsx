@@ -19,7 +19,7 @@ import {
   Info,
 } from 'lucide-react';
 import type { Circuit, CircuitSummary, CircuitSymbol } from '../types/circuit.types.ts';
-import { SymbolParser, formatSymbol } from '../utils/symbol-parser.ts';
+import { SymbolParser } from '../utils/symbol-parser.ts';
 import { SymbolShowUpPopover } from './SymbolShowUpPopover.tsx';
 
 interface Props {
@@ -107,7 +107,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
               <optgroup label="Wbudowane schematy wzorcowe">
                 {predefined.map((item) => (
                   <option key={item.id} value={item.id}>
-                    ⚡ {item.title}
+                    ⚡ {SymbolParser.formatSymbol(item.title)}
                   </option>
                 ))}
               </optgroup>
@@ -115,7 +115,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
                 <optgroup label="Własne wgrane schematy (localStorage)">
                   {custom.map((item) => (
                     <option key={item.id} value={item.id}>
-                      📁 {item.title}
+                      📁 {SymbolParser.formatSymbol(item.title)}
                     </option>
                   ))}
                 </optgroup>
@@ -180,7 +180,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
       <div className="px-5 py-2.5 bg-slate-950/40 border-b border-slate-800/60 flex items-center justify-between text-xs text-slate-400 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Layers className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="font-semibold text-slate-200">{circuit.title}</span>
+          <span className="font-semibold text-slate-200">{SymbolParser.formatSymbol(circuit.title)}</span>
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -193,7 +193,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
                 onClick={() => handleSymbolClick(s)}
                 className="px-2 py-0.5 text-xs font-mono font-bold rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 transition cursor-pointer"
               >
-                {formatSymbol(s.label)}
+                {SymbolParser.formatSymbol(s.label)}
               </button>
             ))}
         </div>
@@ -255,7 +255,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
                   }`}
                 >
                   <span className="text-[11px] font-mono font-bold text-white tracking-tight">
-                    {formatSymbol(sym.label)}
+                    {SymbolParser.formatSymbol(sym.label)}
                   </span>
                 </div>
               </div>
@@ -281,9 +281,9 @@ export const SvgSchematicViewer: React.FC<Props> = ({
           <Info className="w-3.5 h-3.5 text-cyan-400" />
           <span>
             Najedź kursorem lub kliknij dowolny symbol (np.{' '}
-            <span className="font-mono text-cyan-300">{formatSymbol('R_b1')}</span>,{' '}
-            <span className="font-mono text-cyan-300">{formatSymbol('U_{in}')}</span>,{' '}
-            <span className="font-mono text-cyan-300">{formatSymbol('D_z')}</span>
+            <span className="font-mono text-cyan-300">{SymbolParser.formatSymbol('R_b1')}</span>,{' '}
+            <span className="font-mono text-cyan-300">{SymbolParser.formatSymbol('U_{in}')}</span>,{' '}
+            <span className="font-mono text-cyan-300">{SymbolParser.formatSymbol('D_z')}</span>
             ), aby wyświetlić kartę Show-Up ze wzorami i rolą fizyczną.
           </span>
         </div>

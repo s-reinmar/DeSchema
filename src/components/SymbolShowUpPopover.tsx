@@ -8,7 +8,7 @@
 import React from 'react';
 import { X, Zap, Cpu, FunctionSquare, Info, Pin, Sparkles, CheckCircle2 } from 'lucide-react';
 import type { CircuitSymbol } from '../types/circuit.types.ts';
-import { SymbolParser, formatSymbol } from '../utils/symbol-parser.ts';
+import { SymbolParser } from '../utils/symbol-parser.ts';
 
 interface Props {
   readonly symbol: CircuitSymbol | null;
@@ -35,11 +35,11 @@ export const SymbolShowUpPopover: React.FC<Props> = ({
       <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2.5">
           <div className="px-2.5 py-1 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-mono font-bold text-sm shadow-[0_0_10px_rgba(6,182,212,0.3)]">
-            {formatSymbol(symbol.label)}
+            {SymbolParser.formatSymbol(symbol.label)}
           </div>
           <div>
             <h3 id="symbol-popover-title" className="text-sm font-bold text-white leading-tight">
-              {symbol.name ? formatSymbol(symbol.name) : formatSymbol(symbol.label)}
+              {symbol.name ? SymbolParser.formatSymbol(symbol.name) : SymbolParser.formatSymbol(symbol.label)}
             </h3>
             <span className="text-[11px] font-mono text-cyan-400/90 flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-cyan-400" />
@@ -118,7 +118,7 @@ export const SymbolShowUpPopover: React.FC<Props> = ({
               <Cpu className="w-3 h-3 text-amber-400" />
               Wartość typowa / komponent:
             </span>
-            <span className="font-mono text-cyan-300 font-bold">{symbol.typicalValue}</span>
+            <span className="font-mono text-cyan-300 font-bold">{SymbolParser.formatSymbol(symbol.typicalValue)}</span>
           </div>
         )}
       </div>
