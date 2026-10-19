@@ -8,6 +8,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext.tsx';
+import { SettingsProvider } from './context/SettingsContext.tsx';
 import { LocalStorageService } from './services/local-storage-storage.service.ts';
 import { CircuitRepository } from './services/circuit-repository.ts';
 import { TopNavbar } from './components/TopNavbar.tsx';
@@ -108,55 +109,57 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950">
-        <TopNavbar
-          repository={repository}
-          onCircuitUploaded={handleCircuitUploaded}
-        />
+      <SettingsProvider>
+        <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950">
+          <TopNavbar
+            repository={repository}
+            onCircuitUploaded={handleCircuitUploaded}
+          />
 
-        {/* Dual Panel Workspace Layout */}
-        <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-            {/* Left Panel: Socratic Pedagogical Inquiry & Dialogue */}
-            <section
-              aria-label="Panel pedagogiczny analizy sokratejskiej"
-              className="xl:col-span-5 flex flex-col gap-6"
-            >
-              <SocraticStepSection
-                circuit={currentCircuit}
-                steps={currentCircuit.socraticSteps}
-                currentStepNumber={currentStepNumber}
-                onStepChange={setCurrentStepNumber}
-              />
-            </section>
+          {/* Dual Panel Workspace Layout */}
+          <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+              {/* Left Panel: Socratic Pedagogical Inquiry & Dialogue */}
+              <section
+                aria-label="Panel pedagogiczny analizy sokratejskiej"
+                className="xl:col-span-5 flex flex-col gap-6"
+              >
+                <SocraticStepSection
+                  circuit={currentCircuit}
+                  steps={currentCircuit.socraticSteps}
+                  currentStepNumber={currentStepNumber}
+                  onStepChange={setCurrentStepNumber}
+                />
+              </section>
 
-            {/* Right Panel: Advanced SvgSchematicViewer Engine */}
-            <section
-              aria-label="Prawy panel wizualizacji schematu elektronicznego"
-              className="xl:col-span-7 flex flex-col gap-6 sticky xl:top-20"
-            >
-              <SvgSchematicViewer
-                circuit={currentCircuit}
-                summaries={summaries}
-                activeTargetSymbolIds={activeTargetSymbolIds}
-                onSelectCircuit={handleSelectCircuit}
-                onPreviousCircuit={handlePreviousCircuit}
-                onNextCircuit={handleNextCircuit}
-                onOpenUploadModal={() => setIsUploadModalOpen(true)}
-              />
-            </section>
-          </div>
-        </main>
+              {/* Right Panel: Advanced SvgSchematicViewer Engine */}
+              <section
+                aria-label="Prawy panel wizualizacji schematu elektronicznego"
+                className="xl:col-span-7 flex flex-col gap-6 sticky xl:top-20"
+              >
+                <SvgSchematicViewer
+                  circuit={currentCircuit}
+                  summaries={summaries}
+                  activeTargetSymbolIds={activeTargetSymbolIds}
+                  onSelectCircuit={handleSelectCircuit}
+                  onPreviousCircuit={handlePreviousCircuit}
+                  onNextCircuit={handleNextCircuit}
+                  onOpenUploadModal={() => setIsUploadModalOpen(true)}
+                />
+              </section>
+            </div>
+          </main>
 
-        <Footer />
+          <Footer />
 
-        <UploadModal
-          isOpen={isUploadModalOpen}
-          onClose={() => setIsUploadModalOpen(false)}
-          repository={repository}
-          onCircuitUploaded={handleCircuitUploaded}
-        />
-      </div>
+          <UploadModal
+            isOpen={isUploadModalOpen}
+            onClose={() => setIsUploadModalOpen(false)}
+            repository={repository}
+            onCircuitUploaded={handleCircuitUploaded}
+          />
+        </div>
+      </SettingsProvider>
     </ThemeProvider>
   );
 }

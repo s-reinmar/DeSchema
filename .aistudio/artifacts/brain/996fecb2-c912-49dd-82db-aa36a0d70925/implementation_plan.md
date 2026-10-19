@@ -1,77 +1,54 @@
-# Plan: Dedykowany Moduł SymbolParser i Globalne Ujednolicenie Etykiet
+# Plan Implementacji: Refaktoryzacja i Uporządkowanie Paska Nawigacji (TopMenu)
 
-Wdrożenie dedykowanego modułu `SymbolParser` w pliku `src/utils/symbol-parser.ts`, realizującego jednolite formatowanie symboli, indeksów i wzorów fizycznych w oparciu o czyste znaki Unicode z bezpiecznym fallbackiem HTML, zastępującego dotychczasowy formater w całej aplikacji.
-
-> [!IMPORTANT]
-> **Decyzje architektoniczne uzgodnione z użytkownikiem:**
-> - **Dedykowany moduł i klasa:** Statyczna klasa `SymbolParser` w `src/utils/symbol-parser.ts` zawierająca główną funkcję `formatSymbol(label: string): string` oraz metody wspomagające renderowanie prozy i SVG.
-> - **Format wyjściowy:** Czyste znaki Unicode (np. indeksy dolne $U_{in} \rightarrow U_{\text{in}}$ przy użyciu znaków subskryptu `ᵢₙ`, `₀₁₂₃₄₅₆₇₈₉`) z bezpiecznym fallbackiem HTML (`<sub>` / `<sup>`) tam, gdzie znaki Unicode nie pokrywają całego zapisu.
-> - **Strategia integracji:** Zastąpienie dotychczasowego `label-formatter.tsx` nowym, zunifikowanym modułem `SymbolParser` we wszystkich komponentach widoku i schematu.
+Kompleksowa przebudowa komponentu nawigacyjnego `TopNavbar` w systemie **DeSchema Mentor** w oparciu o zasady Clean Architecture, SOLID oraz wytyczne użytkownika zebrane w fazie projektowej.
 
 ---
 
-## 1. Architektura Modułu SymbolParser
+## 1. Architektura i Podział Odpowiedzialności (SOLID)
 
-Zgodnie z zasadami SOLID (SRP, DIP) oraz czystego TypeScript:
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                   SymbolParser (src/utils/symbol-parser.ts)            │
-│  - formatSymbol(label: string): string                                 │
-│    -> Główna funkcja: czyści LaTeX (&, _, ^, \, $, {}) i zamienia      │
-│       indeksy na znaki Unicode (np. R_L -> Rʟ / Rₗ, U_in -> Uᵢₙ).      │
-│  - formatToHtml(raw: string): React.ReactNode                          │
-│    -> Formatuje prozę/wzory czatu i kroków na czysty HTML (<sub>, etc.) │
-│  - sanitizeSvg(svgContent: string): string                             │
-│    -> Przekształca etykiety <text> w SVG na zagnieżdżone <tspan>       │
-│  - cleanLatex(raw: string): string                                     │
-│    -> Eliminuje szum LaTeX (&, $, \quad, \text)                        │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-           ┌────────────────────────┼────────────────────────┐
-           │                        │                        │
-  ┌────────▼────────┐      ┌────────▼────────┐      ┌────────▼────────┐
-  │ SvgSchematic    │      │ SocraticChat    │      │ SocraticStep    │
-  │ Viewer          │      │ Panel           │      │ Section         │
-  └─────────────────┘      └─────────────────┘      └─────────────────┘
-```
-
-### Mapowanie znaków Unicode dla indeksów
-- Cyfry indeksu dolnego: `₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉`
-- Znaki i operatory: `₊ ₋ ₌ ₍ ₎`
-- Litery indeksu dolnego: `ₐ ₑ ₕ ᵢ ⱼ ₖ ₗ ₘ ₙ ₒ ₚ ᵣ ₛ ₜ ᵤ ᵥ ₓ`
-- Litery greckie i symbole fizyczne: `Δ`, `π`, `β`, `Ω`, `µ`, `≈`, `≥`, `≤`, `·`, `∥`, `√`
-- Zastąpienie śmieci LaTeX: usunięcie znaków `&`, `\\`, `$`, `\quad`, zamiana `\cdot` na `·`.
+### A. Komponenty i Moduły
+1. **`src/types/navigation.types.ts`**:
+   - Definicje interfejsów stanu: `SettingsState` (model, deepThinking, language, controlsConfig).
+   - Definicje struktur pomocy: `HelpPromptItem`, `ChatShortcutItem`.
+   - Typy zdarzeń nawigacji i wgrywania JSON.
+2. **`src/components/navigation/SettingsDropdown.tsx`**:
+   - Dropdown z sekcjami:
+     - **Silnik:** dwukierunkowy wybór modelu AI (`gemini-3.5-flash-lite`, `gemini-3.8-flash`, `gemini-4-argon`) + przełącznik `Deep Thinking Mode`.
+     - **Język:** selektor `PL` / `EN` (elegancki interfejs wyboru).
+     - **Sterowanie:** wygaszona sekcja `disabled` z informacją o przyszłej konfiguracji skrótów i czułości.
+3. **`src/components/navigation/HelpDrawer.tsx`**:
+   - Wysuwany z prawej strony boczny panel (Drawer) z tłem typu backdrop blur i animacją:
+     - **Sterowanie czatem:** instrukcja metody sokratejskiej oraz lista skrótów klawiszowych (np. `Enter` – wyślij, `Shift+Enter` – nowa linia, `Esc` – zamknij panel).
+     - **Baza podpowiedzi:** zgrupowane akcje sokratejskie przeniesione z paska czatu (`Wskazówka`, `Wyjaśnij prościej`, `Dlaczego tak zrobiliśmy`, `Ściągawka praw`, `Podsumujmy`).
+     - Kliknięcie w podpowiedź natychmiast wyzwala prompt w aktywnym czacie (lub otwiera ściągawkę praw dla `Ściągawka praw`).
+4. **`src/components/modals/AboutModal.tsx`**:
+   - Dedykowane okno dialogowe: nazwa, wersja, autorzy (@s-reinmar), licencja MIT, stack technologiczny i cele dydaktyczne.
+5. **`src/components/navigation/JsonUploadButton.tsx`**:
+   - Kompaktowy przycisk wyzwalający ukryty `<input type="file" accept=".json" />`.
+   - Asynchroniczne wczytanie (`file.text()`), bezpieczny `JSON.parse` w bloku `try...catch`, walidacja struktury `Circuit`, obsługa powiadomienia o błędzie oraz reset `input.value = ''`.
+6. **`src/components/TopNavbar.tsx` (Koordynator / Facade)**:
+   - Integracja wszystkich modułów w czystym pasku o długości poniżej 200 linii.
 
 ---
 
-## 2. Zakres Zmian w Komponentach
+## 2. Zmiany w UI i Integracja z Czatorem Sokratejskim
 
-1. **`src/utils/symbol-parser.ts` (Nowy plik):**
-   - Utworzenie w pełni otypowanej klasy statycznej `SymbolParser`.
-   - Implementacja `formatSymbol(label: string): string` (czysty Unicode z fallbackiem).
-   - Metody pomocnicze: `formatToHtml`, `sanitizeSvg`, `formatFormula`.
-   - Zapewnienie kompatybilności wstecznej dla dotychczas importowanych funkcji (`formatSchematicLabel`, `formatRichScientificText`, `sanitizeSvgTextLabels`).
-
-2. **`src/components/SvgSchematicViewer.tsx`:**
-   - Podpięcie `SymbolParser.formatSymbol` oraz `SymbolParser.sanitizeSvg` do dynamicznego parsera napisów schematu.
-
-3. **`src/components/SocraticStepSection.tsx`:**
-   - Użycie `SymbolParser.formatToHtml` oraz `SymbolParser.formatSymbol` dla tytułów kroków, pytań, wskazówek i odpowiedzi refleksyjnych.
-
-4. **`src/components/SocraticChatPanel.tsx`:**
-   - Użycie `SymbolParser.formatToHtml` w dialogu czatu i szybkich podpowiedziach.
-
-5. **`src/components/SymbolShowUpPopover.tsx` oraz `CheatsheetModal.tsx`:**
-   - Spójne formatowanie etykiet komponentów, wzorów i opisów fizycznych przy użyciu `SymbolParser`.
-
-6. **Dokumentacja w `docs/changes/`:**
-   - Wygenerowanie raportu architektonicznego Markdown opisującego wdrożenie `SymbolParser`.
+1. **Przeniesienie podpowiedzi z `SocraticChatPanel.tsx`**:
+   - Usunięcie powielonych przycisków `QUICK_ACTIONS` z dołu panelu czatu, aby zyskać czystszy, bardziej przestronny interfejs dialogowy.
+   - Stan wybranego modelu i `thinkingEnabled` zostanie podniesiony do poziomu rodzica (`App.tsx`) lub przekazany poprzez callbacki, umożliwiając synchronizację z nowym menu **Ustawienia**.
+2. **Globalny callback do wyzwalania promptu**:
+   - `onTriggerPrompt: (promptText: string) => void` przekazywany do `TopNavbar` -> `HelpDrawer`.
 
 ---
 
-## 3. Plan Weryfikacji
+## 3. Dostępność (ARIA) i UX
+- Menu rozwijane Ustawień wyposażone w `aria-haspopup="true"`, `aria-expanded` oraz nasłuchiwanie kliknięcia poza obszar (Click Outside) i klawisza `Escape`.
+- Drawer Pomocy z atrybutem `role="dialog"`, `aria-label="Panel pomocy i baza podpowiedzi"`.
+- Zapewnienie pełnej responsywności mobilnej (Drawer i Dropdown dostosowane do ekranów dotykowych).
 
-- **Kompilacja i Linter:** `compile_applet` oraz `lint_applet` (`tsc --noEmit`).
-- **Testy jednostkowe / przypadki brzegowe:** Sprawdzenie formatowania `U_{in}`, `R_{b1}`, `C_{filtr}`, `V_D`, `I_C`, `U_{CE,sat}`, `& = \frac{...}{...}`.
-- **Weryfikacja interfejsu:** Potwierdzenie estetycznego wyglądu schematów, pytań sokratejskich i czatu bez widocznych śmieci LaTeX.
+---
+
+## 4. Weryfikacja i Raport
+1. Kompilacja TypeScript (`npm run lint` / `tsc --noEmit`).
+2. Budowanie produkcyjne (`compile_applet`).
+3. Wygenerowanie raportu architektonicznego w `docs/changes/topmenu-refactor-settings-help-json.md`.

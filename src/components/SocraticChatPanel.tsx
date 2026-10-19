@@ -15,20 +15,18 @@ import {
   Loader2,
   AlertCircle,
   Sparkles,
-  HelpCircle,
-  Lightbulb,
-  Compass,
-  FileCheck2,
 } from 'lucide-react';
 import type { Circuit, SocraticStep } from '../types/circuit.types.ts';
-import { SymbolParser, formatSymbol } from '../utils/symbol-parser.ts';
+import { SymbolParser } from '../utils/symbol-parser.ts';
+import { useSettings } from '../context/SettingsContext.tsx';
+import type { AvailableAiModel } from '../types/navigation.types.ts';
 
 interface Props {
   readonly circuit?: Circuit;
   readonly currentStep: SocraticStep;
 }
 
-export type AvailableModel = 'gemini-3.5-flash-lite' | 'gemini-3.8-flash' | 'gemini-4-argon';
+export type AvailableModel = AvailableAiModel;
 
 export interface ChatMessage {
   readonly id: string;
@@ -40,40 +38,11 @@ export interface ChatMessage {
   readonly timestamp: string;
 }
 
-const QUICK_ACTIONS = [
-  {
-    id: 'why',
-    label: 'Dlaczego tak zrobiliśmy?',
-    icon: HelpCircle,
-    color: 'text-amber-400 border-amber-500/30 hover:bg-amber-500/10',
-    prompt: 'Dlaczego w tym kroku analizujemy akurat ten aspekt obwodu i jaką rolę pełnią podświetlone elementy?',
-  },
-  {
-    id: 'hint',
-    label: 'Wskazówka',
-    icon: Lightbulb,
-    color: 'text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10',
-    prompt: 'Poproszę o subtelną wskazówkę lub pytanie pomocnicze, które naprowadzi mnie na właściwe prawo fizyki.',
-  },
-  {
-    id: 'simpler',
-    label: 'Wyjaśnij prościej',
-    icon: Compass,
-    color: 'text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10',
-    prompt: 'Czy możesz wyjaśnić to zjawisko prościej, na intuicyjnej analogii fizycznej bez skomplikowanych żargonów?',
-  },
-  {
-    id: 'summary',
-    label: 'Podsumujmy',
-    icon: FileCheck2,
-    color: 'text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/10',
-    prompt: 'Podsumujmy najważniejsze wnioski z tego kroku: jakie kluczowe prawo fizyki i zależność tu rządzą?',
-  },
-] as const;
-
 export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => {
-  const [selectedModel, setSelectedModel] = useState<AvailableModel>('gemini-3.5-flash-lite');
-  const [thinkingEnabled, setThinkingEnabled] = useState(false);
+  const { settings, setAiModel, setDeepThinking, registerPromptListener } = useSettings();
+  const selectedModel = settings.aiModel;
+  const thinkingEnabled = settings.deepThinking;
+
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -97,10 +66,7 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
   }, [messages, isLoading]);
 
   const handleModelSelect = (model: AvailableModel) => {
-    setSelectedModel(model);
-    if (model === 'gemini-4-argon') {
-      setThinkingEnabled(true);
-    }
+    setAiModel(model);
   };
 
   const executeSend = async (textToSend: string) => {
@@ -180,6 +146,15 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
     }
   };
 
+  const executeSendRef = useRef(executeSend);
+  executeSendRef.current = executeSend;
+
+  useEffect(() => {
+    return registerPromptListener((promptText: string) => {
+      executeSendRef.current(promptText);
+    });
+  }, [registerPromptListener]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -241,7 +216,7 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
             <input
               type="checkbox"
               checked={thinkingEnabled}
-              onChange={(e) => setThinkingEnabled(e.target.checked)}
+              onChange={(e) => setDeepThinking(e.target.checked)}
               className="w-3.5 h-3.5 rounded text-indigo-500 bg-slate-950 border-slate-700 focus:ring-0"
             />
             <BrainCircuit className={`w-3.5 h-3.5 ${thinkingEnabled ? 'text-indigo-400 animate-pulse' : 'text-slate-500'}`} />
@@ -332,23 +307,6 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 3. Cztery szybkie akcje sokratejskie pod czatem */}
-      <div className="px-3.5 py-2.5 bg-slate-950/90 border-t border-slate-800 flex flex-wrap gap-1.5">
-        {QUICK_ACTIONS.map((action) => {
-          const Icon = action.icon;
-          return (
-            <button
-              key={action.id}
-              onClick={() => executeSend(action.prompt)}
-              disabled={isLoading}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${action.color}`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{action.label}</span>
-            </button>
-          );
-        })}
-      </div>
 
       {/* 4. Pole tekstowe: Enter wysyła, Shift+Enter nowa linia + ikona wysyłania */}
       <div className="p-3.5 bg-slate-900 border-t border-slate-800 flex flex-col gap-2">

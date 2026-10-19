@@ -1,17 +1,18 @@
 /**
  * @file TopNavbar.tsx
- * @description Application top navigation bar with branding, modal triggers, and theme toggle.
- * @author s-reinmar
+ * @description Application top navigation bar coordinating Settings, Help Drawer, About modal, and JSON upload.
+ * @author @s-reinmar
  * @license MIT
  */
 
 import React, { useState } from 'react';
-import { Cpu, HelpCircle, BookOpen, Info, Sun, Moon, Upload, Menu, X } from 'lucide-react';
+import { Cpu, HelpCircle, Info, Sun, Moon, Menu, X } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext.tsx';
-import { WhyWeDidThisModal } from './modals/WhyWeDidThisModal.tsx';
-import { CheatsheetModal } from './modals/CheatsheetModal.tsx';
+import { SettingsDropdown } from './navigation/SettingsDropdown.tsx';
+import { HelpDrawer } from './navigation/HelpDrawer.tsx';
+import { JsonUploadButton } from './navigation/JsonUploadButton.tsx';
 import { AboutModal } from './modals/AboutModal.tsx';
-import { UploadModal } from './modals/UploadModal.tsx';
+import { CheatsheetModal } from './modals/CheatsheetModal.tsx';
 import type { ICircuitRepository } from '../interfaces/circuit-repository.interface.ts';
 
 interface Props {
@@ -21,11 +22,24 @@ interface Props {
 
 export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) => {
   const { theme, toggleTheme } = useTheme();
-  const [isWhyModalOpen, setIsWhyModalOpen] = useState(false);
-  const [isCheatsheetModalOpen, setIsCheatsheetModalOpen] = useState(false);
+  const [isHelpDrawerOpen, setIsHelpDrawerOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isCheatsheetModalOpen, setIsCheatsheetModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleJsonLoaded = (data: unknown) => {
+    const validation = repository.validateCircuit(data);
+    if (!validation.isValid || !validation.circuit) {
+      alert(`Błąd walidacji schematu JSON:\n• ${validation.errors.join('\n• ')}`);
+      return;
+    }
+    repository.saveCustomCircuit(validation.circuit);
+    onCircuitUploaded(validation.circuit.id);
+  };
+
+  const handleJsonError = (errorMsg: string) => {
+    alert(`Nie udało się wczytać pliku: ${errorMsg}`);
+  };
 
   return (
     <>
@@ -52,38 +66,36 @@ export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) =>
           </div>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1.5 text-sm">
+          <nav className="hidden lg:flex items-center gap-2 text-sm">
+            {/* 1. Ustawienia (Dropdown) */}
+            <SettingsDropdown />
+
+            {/* 2. Pomoc (Boczny Drawer) */}
             <button
-              onClick={() => setIsWhyModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800/70 rounded-lg transition"
+              onClick={() => setIsHelpDrawerOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800/70 rounded-xl transition cursor-pointer"
+              title="Otwórz centrum pomocy i bazę podpowiedzi"
             >
               <HelpCircle className="w-4 h-4 text-amber-400" />
-              <span>Dlaczego tak zrobiliśmy</span>
+              <span>Pomoc</span>
             </button>
 
-            <button
-              onClick={() => setIsCheatsheetModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800/70 rounded-lg transition"
-            >
-              <BookOpen className="w-4 h-4 text-indigo-400" />
-              <span>Ściągawka praw</span>
-            </button>
-
+            {/* 3. O programie (Modal) */}
             <button
               onClick={() => setIsAboutModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800/70 rounded-lg transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800/70 rounded-xl transition cursor-pointer"
+              title="Informacje o projekcie, wersji i licencji"
             >
               <Info className="w-4 h-4 text-cyan-400" />
               <span>O programie</span>
             </button>
 
-            <button
-              onClick={() => setIsUploadModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition border border-emerald-500/20 ml-2"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Wgraj JSON</span>
-            </button>
+            {/* 4. Wgraj JSON */}
+            <JsonUploadButton
+              onJsonLoaded={handleJsonLoaded}
+              onError={handleJsonError}
+              className="ml-2"
+            />
           </nav>
 
           {/* Right Controls */}
@@ -91,7 +103,7 @@ export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) =>
             <button
               onClick={toggleTheme}
               aria-label="Przełącz motyw"
-              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition cursor-pointer"
               title={theme === 'dark' ? 'Włącz tryb jasny' : 'Włącz tryb ciemny'}
             >
               {theme === 'dark' ? (
@@ -104,8 +116,8 @@ export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) =>
             {/* Mobile Hamburger */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition lg:hidden"
-              aria-label="Menu mobilne"
+              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition lg:hidden cursor-pointer"
+              aria-label="Menu nawigacji"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -114,27 +126,20 @@ export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) =>
 
         {/* Mobile menu dropdown */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-800 bg-slate-950 px-4 py-3 space-y-2">
-            <button
-              onClick={() => {
-                setIsWhyModalOpen(true);
-                setIsMobileMenuOpen(false);
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-900 rounded-lg"
-            >
-              <HelpCircle className="w-4 h-4 text-amber-400" />
-              <span>Dlaczego tak zrobiliśmy</span>
-            </button>
+          <div className="lg:hidden border-t border-slate-800 bg-slate-950 px-4 py-3 space-y-2 animate-fade-in">
+            <div className="py-1">
+              <SettingsDropdown />
+            </div>
 
             <button
               onClick={() => {
-                setIsCheatsheetModalOpen(true);
+                setIsHelpDrawerOpen(true);
                 setIsMobileMenuOpen(false);
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-900 rounded-lg"
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-900 rounded-xl"
             >
-              <BookOpen className="w-4 h-4 text-indigo-400" />
-              <span>Ściągawka praw</span>
+              <HelpCircle className="w-4 h-4 text-amber-400" />
+              <span>Pomoc &amp; Baza podpowiedzi</span>
             </button>
 
             <button
@@ -142,41 +147,43 @@ export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) =>
                 setIsAboutModalOpen(true);
                 setIsMobileMenuOpen(false);
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-900 rounded-lg"
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-900 rounded-xl"
             >
               <Info className="w-4 h-4 text-cyan-400" />
               <span>O programie</span>
             </button>
 
-            <button
-              onClick={() => {
-                setIsUploadModalOpen(true);
-                setIsMobileMenuOpen(false);
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-emerald-400 hover:bg-emerald-950/30 rounded-lg border border-emerald-500/20"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Wgraj własny obwód JSON</span>
-            </button>
+            <div className="pt-2 border-t border-slate-800/80">
+              <JsonUploadButton
+                onJsonLoaded={(data) => {
+                  handleJsonLoaded(data);
+                  setIsMobileMenuOpen(false);
+                }}
+                onError={handleJsonError}
+                className="w-full justify-center"
+              />
+            </div>
           </div>
         )}
       </header>
 
-      {/* Modals */}
-      <WhyWeDidThisModal isOpen={isWhyModalOpen} onClose={() => setIsWhyModalOpen(false)} />
+      {/* Drawer Pomocy */}
+      <HelpDrawer
+        isOpen={isHelpDrawerOpen}
+        onClose={() => setIsHelpDrawerOpen(false)}
+        onOpenCheatsheet={() => setIsCheatsheetModalOpen(true)}
+      />
+
+      {/* Modal O programie */}
+      <AboutModal
+        isOpen={isAboutModalOpen}
+        onClose={() => setIsAboutModalOpen(false)}
+      />
+
+      {/* Modal Ściągawka praw (wyzwalany z HelpDrawer) */}
       <CheatsheetModal
         isOpen={isCheatsheetModalOpen}
         onClose={() => setIsCheatsheetModalOpen(false)}
-      />
-      <AboutModal isOpen={isAboutModalOpen} onClose={() => setIsAboutModalOpen(false)} />
-      <UploadModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-        repository={repository}
-        onCircuitUploaded={(newId) => {
-          onCircuitUploaded(newId);
-          setIsUploadModalOpen(false);
-        }}
       />
     </>
   );

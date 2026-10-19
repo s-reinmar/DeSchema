@@ -1,6 +1,6 @@
 {
-  "summary": "Zaktualizowany plan wdrożenia dedykowanego modułu SymbolParser w src/utils/symbol-parser.ts:\n- Architektura: statyczna klasa SymbolParser z metodami formatowania, w tym formatSymbol(label: string): string\n- Standard znaków: czyste znaki Unicode dla indeksów i greki z bezpiecznym fallbackiem HTML\n- Ujednolicenie i zastąpienie dotychczasowego formatera we wszystkich komponentach: SvgSchematicViewer, SocraticStepSection, SocraticChatPanel, SymbolShowUpPopover i CheatsheetModal\n- Pełna zgodność z SOLID, TypeScript strict typing i raport w docs/changes/",
-  "updatedAt": "2026-10-19T05:56:03.295451047Z",
+  "summary": "Kompleksowy plan refaktoryzacji górnego paska nawigacji (TopMenu / TopNavbar):\n- Ustawienia (Dropdown): wybór modelu AI, Deep Thinking Mode, selektor języka (PL/EN) oraz zablokowany slot sterowania.\n- Pomoc (Drawer z prawej strony): sterowanie i skróty klawiszowe czatu oraz zgrupowana Baza podpowiedzi (Wskazówka, Wyjaśnij prościej, Dlaczego tak zrobiliśmy, Ściągawka praw, Podsumujmy) z bezpośrednim wyzwalaniem promptu w czacie.\n- O programie (Modal): metryka aplikacji, licencja MIT, wersja, autorzy.\n- Wgraj JSON: zintegrowany przycisk z ukrytym inputem, walidacją i bezpiecznym parsowaniem.\n- Czysta architektura TypeScript, separacja odpowiedzialności (SRP/DIP), pełna dostępność ARIA.",
+  "updatedAt": "2026-10-19T06:28:19.056034434Z",
   "requestFeedback": true,
   "userFacing": true
 }
