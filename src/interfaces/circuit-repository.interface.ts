@@ -1,6 +1,7 @@
 /**
  * @file circuit-repository.interface.ts
- * @description Contract for Circuit repository operations (load, switch, select, upload, validate).
+ * @description Contract for Circuit repository operations (load, switch, select, upload, validate)
+ * supporting both local storage and Cloud SQL PostgreSQL backend.
  * @author s-reinmar
  * @license MIT
  */
@@ -9,12 +10,17 @@ import type { Circuit, CircuitSummary, ValidationResult } from '../types/circuit
 
 export interface ICircuitRepository {
   /**
-   * Initializes predefined circuits and hydrates stored custom circuits.
+   * Initializes circuits from Cloud SQL PostgreSQL backend and falls back to /resources/.
    */
-  initialize(): Promise<void>;
+  initialize(token?: string | null): Promise<void>;
 
   /**
-   * Returns all registered circuits (predefined and user custom).
+   * Refreshes circuit catalog using optional authenticated user token.
+   */
+  refresh(token?: string | null): Promise<void>;
+
+  /**
+   * Returns all registered circuits (public catalog and user custom circuits).
    */
   getAll(): readonly Circuit[];
 
@@ -29,12 +35,22 @@ export interface ICircuitRepository {
   getSummaries(): readonly CircuitSummary[];
 
   /**
+   * Persists a custom circuit remotely in Cloud SQL when token is provided, or in localStorage.
+   */
+  saveRemoteCircuit(circuit: Circuit, token: string): Promise<Circuit>;
+
+  /**
+   * Deletes a custom circuit remotely in Cloud SQL or in localStorage.
+   */
+  deleteRemoteCircuit(id: string, token: string): Promise<boolean>;
+
+  /**
    * Persists a validated custom circuit into repository and local storage.
    */
   saveCustomCircuit(circuit: Circuit): void;
 
   /**
-   * Deletes a custom user circuit.
+   * Deletes a custom user circuit from local storage.
    */
   deleteCustomCircuit(id: string): boolean;
 

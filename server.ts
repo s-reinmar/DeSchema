@@ -10,6 +10,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, ThinkingLevel } from '@google/genai';
+import { circuitsRouter } from './src/api/circuits.router.ts';
+import { seedInitialCircuits } from './src/db/seed.ts';
 
 dotenv.config();
 
@@ -20,6 +22,7 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json({ limit: '5mb' }));
+app.use('/api/circuits', circuitsRouter);
 
 /**
  * Initializes GoogleGenAI client with the required User-Agent header.
@@ -273,6 +276,12 @@ app.get('/api/health', (_req: Request, res: Response) => {
  * Vite integration: Middleware in development, static files in production.
  */
 async function bootstrapServer() {
+  try {
+    await seedInitialCircuits();
+  } catch (seedErr) {
+    console.warn('[Bootstrap] Ostrzeżenie podczas seedowania bazy:', seedErr);
+  }
+
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.resolve(__dirname, 'dist')));
     app.get('*', (_req: Request, res: Response) => {

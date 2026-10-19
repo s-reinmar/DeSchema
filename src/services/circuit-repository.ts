@@ -1,6 +1,7 @@
 /**
  * @file circuit-repository.ts
- * @description Implementation of ICircuitRepository loading circuits from /public/resources/ (SSOT) and localStorage.
+ * @description Implementation of ICircuitRepository loading circuits from Cloud SQL PostgreSQL (/api/circuits)
+ * with graceful fallback to /resources/ and local storage caching.
  * @author @s-reinmar
  * @license MIT
  */
@@ -25,11 +26,46 @@ export class CircuitRepository implements ICircuitRepository {
   }
 
   /**
-   * Initializes predefined circuits from /public/resources/ via HTTP fetch and hydrates localStorage customs.
+   * Initializes circuits from Cloud SQL database via /api/circuits, falling back to static resources.
    */
-  public async initialize(): Promise<void> {
-    await this.tryFetchResources();
+  public async initialize(token?: string | null): Promise<void> {
+    await this.refresh(token);
     this.hydrateCustomCircuits();
+  }
+
+  /**
+   * Refreshes catalog by querying the PostgreSQL backend with optional user Bearer token.
+   */
+  public async refresh(token?: string | null): Promise<void> {
+    try {
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch('/api/circuits', { headers });
+      if (response.ok) {
+        const data = (await response.json()) as Circuit[];
+        if (Array.isArray(data) && data.length > 0) {
+          this.predefinedMap.clear();
+          this.customMap.clear();
+
+          for (const c of data) {
+            if (c.isCustom) {
+              this.customMap.set(c.id, c);
+            } else {
+              this.predefinedMap.set(c.id, c);
+            }
+          }
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('[CircuitRepository] Błąd zapytania /api/circuits, aktywacja fallbacku:', err);
+    }
+
+    // Fallback to static JSON files in /resources/
+    await this.tryFetchResources();
   }
 
   public getAll(): readonly Circuit[] {
@@ -41,7 +77,6 @@ export class CircuitRepository implements ICircuitRepository {
   }
 
   public getSummaries(): readonly CircuitSummary[] {
-    // If predefined circuits haven't finished fetching yet, use PREDEFINED_CIRCUITS_META
     const predefinedSummaries =
       this.predefinedMap.size > 0
         ? Array.from(this.predefinedMap.values()).map((c) => ({
@@ -65,6 +100,48 @@ export class CircuitRepository implements ICircuitRepository {
     }));
 
     return [...predefinedSummaries, ...customSummaries];
+  }
+
+  /**
+   * Persists a validated custom circuit into Cloud SQL PostgreSQL database.
+   */
+  public async saveRemoteCircuit(circuit: Circuit, token: string): Promise<Circuit> {
+    const response = await fetch('/api/circuits', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(circuit),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Nie udało się zapisać obwodu w bazie danych.');
+    }
+
+    const created = (await response.json()) as Circuit;
+    this.customMap.set(created.id, { ...created, isCustom: true });
+    return created;
+  }
+
+  /**
+   * Deletes a circuit from Cloud SQL PostgreSQL database.
+   */
+  public async deleteRemoteCircuit(id: string, token: string): Promise<boolean> {
+    const response = await fetch(`/api/circuits/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok) {
+      this.customMap.delete(id);
+      this.deleteCustomCircuit(id);
+      return true;
+    }
+    return false;
   }
 
   public saveCustomCircuit(circuit: Circuit): void {
@@ -103,9 +180,6 @@ export class CircuitRepository implements ICircuitRepository {
     return summaries[prevIndex].id;
   }
 
-  /**
-   * Fetches the 3 built-in circuits from the Single Source of Truth at /resources/ (served from public/resources/).
-   */
   private async tryFetchResources(): Promise<void> {
     for (const fileName of PREDEFINED_RESOURCE_FILES) {
       try {

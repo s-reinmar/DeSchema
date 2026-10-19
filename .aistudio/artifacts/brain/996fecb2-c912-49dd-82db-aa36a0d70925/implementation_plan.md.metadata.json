@@ -1,6 +1,6 @@
 {
-  "summary": "Plan wdrożenia menu 'Sesja' (eksport/import JSON, historia sesji) oraz panelu 'Układy' (katalog obwodów z zarezerwowanym miejscem), z usunięciem starego wgrywania JSON z paska nawigacji i z paska narzędzi schematu.",
-  "updatedAt": "2026-10-19T07:30:56.803556303Z",
+  "summary": "Plan implementacji relacyjnej bazy danych Cloud SQL (PostgreSQL) oraz uwierzytelniania użytkowników (Firebase Auth) dla platformy DeSchema Mentor.\nPlan obejmuje znormalizowany model bazy danych z tabelami obwodów, symboli i kroków sokratejskich, katalog publiczny oraz prywatne kolekcje użytkowników.",
+  "updatedAt": "2026-10-19T08:25:28.986497117Z",
   "requestFeedback": true,
   "userFacing": true
 }

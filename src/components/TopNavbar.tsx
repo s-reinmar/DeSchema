@@ -1,6 +1,6 @@
 /**
  * @file TopNavbar.tsx
- * @description Main top navigation bar uniting Session management, Circuits catalog, Settings, Help Drawer, and About modal.
+ * @description Main top navigation bar uniting Session management, Circuits catalog, Settings, Help Drawer, User Auth, and Theme Switcher.
  * @author @s-reinmar
  * @license MIT
  */
@@ -11,10 +11,11 @@ import { useTheme } from '../context/ThemeContext.tsx';
 import { SessionDropdown } from './navigation/SessionDropdown.tsx';
 import { SettingsDropdown } from './navigation/SettingsDropdown.tsx';
 import { HelpDrawer } from './navigation/HelpDrawer.tsx';
+import { UserAuthButton } from './navigation/UserAuthButton.tsx';
 import { CircuitsManagerModal } from './modals/CircuitsManagerModal.tsx';
 import { AboutModal } from './modals/AboutModal.tsx';
 import { CheatsheetModal } from './modals/CheatsheetModal.tsx';
-import type { CircuitSummary } from '../types/circuit.types.ts';
+import type { Circuit, CircuitSummary } from '../types/circuit.types.ts';
 import type { SessionData } from '../types/session.types.ts';
 
 interface Props {
@@ -23,6 +24,8 @@ interface Props {
   readonly onSelectCircuit: (id: string) => void;
   readonly onExportSession: () => SessionData;
   readonly onRestoreSession: (session: SessionData) => void;
+  readonly onSaveCustomCircuit?: (circuit: Circuit) => Promise<void>;
+  readonly onDeleteCircuit?: (id: string) => Promise<void>;
 }
 
 export const TopNavbar: React.FC<Props> = ({
@@ -31,6 +34,8 @@ export const TopNavbar: React.FC<Props> = ({
   onSelectCircuit,
   onExportSession,
   onRestoreSession,
+  onSaveCustomCircuit,
+  onDeleteCircuit,
 }) => {
   const { theme, toggleTheme } = useTheme();
   const [isCircuitsModalOpen, setIsCircuitsModalOpen] = useState(false);
@@ -65,26 +70,22 @@ export const TopNavbar: React.FC<Props> = ({
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-2 text-sm">
-            {/* 1. Sesja (Przed Ustawieniami) */}
             <SessionDropdown
               onExportSession={onExportSession}
               onRestoreSession={onRestoreSession}
             />
 
-            {/* 2. Układy (Za Sesją i przed Ustawieniami) */}
             <button
               onClick={() => setIsCircuitsModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800/70 rounded-xl transition cursor-pointer"
-              title="Przeglądaj i zarządzaj katalogiem układów"
+              title="Przeglądaj i zarządzaj bazą obwodów Cloud SQL"
             >
               <CircuitBoard className="w-4 h-4 text-cyan-400" />
               <span>Układy</span>
             </button>
 
-            {/* 3. Ustawienia */}
             <SettingsDropdown />
 
-            {/* 4. Pomoc (Boczny Drawer) */}
             <button
               onClick={() => setIsHelpDrawerOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800/70 rounded-xl transition cursor-pointer"
@@ -94,7 +95,6 @@ export const TopNavbar: React.FC<Props> = ({
               <span>Pomoc</span>
             </button>
 
-            {/* 5. O programie (Modal) */}
             <button
               onClick={() => setIsAboutModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800/70 rounded-xl transition cursor-pointer"
@@ -107,6 +107,9 @@ export const TopNavbar: React.FC<Props> = ({
 
           {/* Right Controls */}
           <div className="flex items-center gap-2">
+            {/* User Auth widget */}
+            <UserAuthButton />
+
             <button
               onClick={toggleTheme}
               aria-label="Przełącz motyw"
@@ -152,7 +155,7 @@ export const TopNavbar: React.FC<Props> = ({
               className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-900 rounded-xl"
             >
               <CircuitBoard className="w-4 h-4 text-cyan-400" />
-              <span>Katalog Układów</span>
+              <span>Baza Układów Cloud SQL</span>
             </button>
 
             <div className="py-1">
@@ -184,13 +187,15 @@ export const TopNavbar: React.FC<Props> = ({
         )}
       </header>
 
-      {/* Modal Katalogu Układów */}
+      {/* Modal Bazy Układów */}
       <CircuitsManagerModal
         isOpen={isCircuitsModalOpen}
         onClose={() => setIsCircuitsModalOpen(false)}
         summaries={summaries}
         currentCircuitId={currentCircuitId}
         onSelectCircuit={onSelectCircuit}
+        onSaveCustomCircuit={onSaveCustomCircuit}
+        onDeleteCircuit={onDeleteCircuit}
       />
 
       {/* Drawer Pomocy */}

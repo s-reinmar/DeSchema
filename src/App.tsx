@@ -1,13 +1,14 @@
 /**
  * @file App.tsx
- * @description Main application entry point uniting TopNavbar (Session, Circuits, Settings, Help),
- * dual-panel Socratic Mentor (left), and interactive SvgSchematicViewer (right).
+ * @description Main application entry point uniting AuthProvider, ThemeProvider, SettingsProvider,
+ * TopNavbar, Cloud SQL circuit persistence, Socratic Mentor panel, and SvgSchematicViewer.
  * @author @s-reinmar
  * @license MIT
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
+import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { ThemeProvider } from './context/ThemeContext.tsx';
 import { SettingsProvider } from './context/SettingsContext.tsx';
 import { LocalStorageService } from './services/local-storage-storage.service.ts';
@@ -29,7 +30,8 @@ const INITIAL_MENTOR_MESSAGE: ChatMessage = {
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
 };
 
-export default function App() {
+function DeSchemaWorkspace() {
+  const { idToken } = useAuth();
   const storageService = useMemo(() => new LocalStorageService(), []);
   const repository = useMemo(() => new CircuitRepository(storageService), [storageService]);
 
@@ -42,8 +44,11 @@ export default function App() {
   const [messages, setMessages] = useState<readonly ChatMessage[]>([INITIAL_MENTOR_MESSAGE]);
   const [annotations, setAnnotations] = useState<readonly SchematicAnnotation[]>([]);
 
+  // Synchronize with database whenever idToken changes (login/logout/token refresh)
   useEffect(() => {
-    repository.initialize().then(() => {
+    let isMounted = true;
+    repository.initialize(idToken).then(() => {
+      if (!isMounted) return;
       const all = repository.getAll();
       setCircuits(all);
       if (all.length > 0 && !repository.getById(currentCircuitId)) {
@@ -51,7 +56,11 @@ export default function App() {
       }
       setIsLoaded(true);
     });
-  }, [repository, currentCircuitId]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [repository, idToken, currentCircuitId]);
 
   const currentCircuit = useMemo(() => {
     return repository.getById(currentCircuitId) ?? circuits[0];
@@ -99,6 +108,39 @@ export default function App() {
     setCurrentStepNumber(1);
   };
 
+  const handleSaveCustomCircuit = useCallback(
+    async (circuit: Circuit): Promise<void> => {
+      if (idToken) {
+        const created = await repository.saveRemoteCircuit(circuit, idToken);
+        setCircuits(repository.getAll());
+        setCurrentCircuitId(created.id);
+      } else {
+        repository.saveCustomCircuit(circuit);
+        setCircuits(repository.getAll());
+        setCurrentCircuitId(circuit.id);
+      }
+      setCurrentStepNumber(1);
+    },
+    [repository, idToken]
+  );
+
+  const handleDeleteCircuit = useCallback(
+    async (id: string): Promise<void> => {
+      if (idToken) {
+        await repository.deleteRemoteCircuit(id, idToken);
+      } else {
+        repository.deleteCustomCircuit(id);
+      }
+      const updated = repository.getAll();
+      setCircuits(updated);
+      if (currentCircuitId === id && updated.length > 0) {
+        setCurrentCircuitId(updated[0].id);
+        setCurrentStepNumber(1);
+      }
+    },
+    [repository, idToken, currentCircuitId]
+  );
+
   const handleExportSession = (): SessionData => {
     return {
       version: '1.0.0',
@@ -143,14 +185,12 @@ export default function App() {
 
   if (!isLoaded && !currentCircuit) {
     return (
-      <ThemeProvider>
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
-            <p className="text-sm font-mono text-slate-400">Wczytywanie obwodów wzorcowych DeSchema...</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+          <p className="text-sm font-mono text-slate-400">Łączenie z bazą Cloud SQL PostgreSQL...</p>
         </div>
-      </ThemeProvider>
+      </div>
     );
   }
 
@@ -160,57 +200,67 @@ export default function App() {
   const activeTargetSymbolIds = currentStep?.targetSymbolIds ?? [];
 
   return (
-    <ThemeProvider>
-      <SettingsProvider>
-        <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950 transition-colors duration-300">
-          <TopNavbar
-            summaries={summaries}
-            currentCircuitId={currentCircuitId}
-            onSelectCircuit={handleSelectCircuit}
-            onExportSession={handleExportSession}
-            onRestoreSession={handleRestoreSession}
-          />
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950 transition-colors duration-300">
+      <TopNavbar
+        summaries={summaries}
+        currentCircuitId={currentCircuitId}
+        onSelectCircuit={handleSelectCircuit}
+        onExportSession={handleExportSession}
+        onRestoreSession={handleRestoreSession}
+        onSaveCustomCircuit={handleSaveCustomCircuit}
+        onDeleteCircuit={handleDeleteCircuit}
+      />
 
-          {/* Dual Panel Workspace Layout */}
-          <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-              {/* Left Panel: Socratic Pedagogical Inquiry & Dialogue */}
-              <section
-                aria-label="Panel pedagogiczny analizy sokratejskiej"
-                className="xl:col-span-5 flex flex-col gap-6 xl:max-h-[calc(100vh-8.5rem)] xl:overflow-y-auto overscroll-contain no-scrollbar"
-              >
-                <SocraticStepSection
-                  circuit={currentCircuit}
-                  steps={currentCircuit.socraticSteps}
-                  currentStepNumber={currentStepNumber}
-                  onStepChange={setCurrentStepNumber}
-                  messages={messages}
-                  onMessagesChange={setMessages}
-                />
-              </section>
+      {/* Dual Panel Workspace Layout */}
+      <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+          {/* Left Panel: Socratic Pedagogical Inquiry & Dialogue */}
+          <section
+            aria-label="Panel pedagogiczny analizy sokratejskiej"
+            className="xl:col-span-5 flex flex-col gap-6 xl:max-h-[calc(100vh-8.5rem)] xl:overflow-y-auto overscroll-contain no-scrollbar"
+          >
+            <SocraticStepSection
+              circuit={currentCircuit}
+              steps={currentCircuit.socraticSteps}
+              currentStepNumber={currentStepNumber}
+              onStepChange={setCurrentStepNumber}
+              messages={messages}
+              onMessagesChange={setMessages}
+            />
+          </section>
 
-              {/* Right Panel: Advanced SvgSchematicViewer Engine */}
-              <section
-                aria-label="Prawy panel wizualizacji schematu elektronicznego"
-                className="xl:col-span-7 flex flex-col gap-6 xl:sticky xl:top-20 overscroll-contain no-scrollbar"
-              >
-                <SvgSchematicViewer
-                  circuit={currentCircuit}
-                  summaries={summaries}
-                  activeTargetSymbolIds={activeTargetSymbolIds}
-                  annotations={annotations}
-                  onAnnotationsChange={setAnnotations}
-                  onSelectCircuit={handleSelectCircuit}
-                  onPreviousCircuit={handlePreviousCircuit}
-                  onNextCircuit={handleNextCircuit}
-                />
-              </section>
-            </div>
-          </main>
-
-          <Footer />
+          {/* Right Panel: Advanced SvgSchematicViewer Engine */}
+          <section
+            aria-label="Prawy panel wizualizacji schematu elektronicznego"
+            className="xl:col-span-7 flex flex-col gap-6 xl:sticky xl:top-20 overscroll-contain no-scrollbar"
+          >
+            <SvgSchematicViewer
+              circuit={currentCircuit}
+              summaries={summaries}
+              activeTargetSymbolIds={activeTargetSymbolIds}
+              annotations={annotations}
+              onAnnotationsChange={setAnnotations}
+              onSelectCircuit={handleSelectCircuit}
+              onPreviousCircuit={handlePreviousCircuit}
+              onNextCircuit={handleNextCircuit}
+            />
+          </section>
         </div>
-      </SettingsProvider>
-    </ThemeProvider>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <SettingsProvider>
+          <DeSchemaWorkspace />
+        </SettingsProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
