@@ -21,7 +21,7 @@ import {
   FileCheck2,
 } from 'lucide-react';
 import type { Circuit, SocraticStep } from '../types/circuit.types.ts';
-import { formatRichScientificText } from '../utils/label-formatter.tsx';
+import { SymbolParser, formatSymbol } from '../utils/symbol-parser.ts';
 
 interface Props {
   readonly circuit?: Circuit;
@@ -392,5 +392,5 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
  * Splits message text into regular strings and formatted mathematical/physical formulas.
  */
 function renderMessageTextWithFormulas(text: string): React.ReactNode {
-  return formatRichScientificText(text);
+  return SymbolParser.formatRichScientificText(text);
 }

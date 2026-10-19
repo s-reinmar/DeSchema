@@ -19,7 +19,7 @@ import {
   Info,
 } from 'lucide-react';
 import type { Circuit, CircuitSummary, CircuitSymbol } from '../types/circuit.types.ts';
-import { formatSchematicLabel, sanitizeSvgTextLabels } from '../utils/label-formatter.tsx';
+import { SymbolParser, formatSymbol } from '../utils/symbol-parser.ts';
 import { SymbolShowUpPopover } from './SymbolShowUpPopover.tsx';
 
 interface Props {
@@ -193,7 +193,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
                 onClick={() => handleSymbolClick(s)}
                 className="px-2 py-0.5 text-xs font-mono font-bold rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 transition cursor-pointer"
               >
-                {formatSchematicLabel(s.label)}
+                {formatSymbol(s.label)}
               </button>
             ))}
         </div>
@@ -222,10 +222,10 @@ export const SvgSchematicViewer: React.FC<Props> = ({
           <svg
             viewBox={circuit.svgViewBox}
             className="w-full h-full text-slate-300 drop-shadow-lg select-none"
-            dangerouslySetInnerHTML={{ __html: sanitizeSvgTextLabels(circuit.svgContent) }}
+            dangerouslySetInnerHTML={{ __html: SymbolParser.sanitizeSvg(circuit.svgContent) }}
           />
 
-          {/* 2 & 3. Interactive Symbol Hotspots with <sub> / <sup> and Show-Up Popover */}
+          {/* 2 & 3. Interactive Symbol Hotspots with Unicode / sub-sup and Show-Up Popover */}
           {circuit.symbols.map((sym) => {
             const isActiveInStep = activeTargetSymbolIds.includes(sym.id);
             const isSelected = activeSymbol?.id === sym.id;
@@ -255,7 +255,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
                   }`}
                 >
                   <span className="text-[11px] font-mono font-bold text-white tracking-tight">
-                    {formatSchematicLabel(sym.label)}
+                    {formatSymbol(sym.label)}
                   </span>
                 </div>
               </div>
@@ -281,9 +281,9 @@ export const SvgSchematicViewer: React.FC<Props> = ({
           <Info className="w-3.5 h-3.5 text-cyan-400" />
           <span>
             Najedź kursorem lub kliknij dowolny symbol (np.{' '}
-            <span className="font-mono text-cyan-300">{formatSchematicLabel('R_b1')}</span>,{' '}
-            <span className="font-mono text-cyan-300">{formatSchematicLabel('U_{in}')}</span>,{' '}
-            <span className="font-mono text-cyan-300">{formatSchematicLabel('D_z')}</span>
+            <span className="font-mono text-cyan-300">{formatSymbol('R_b1')}</span>,{' '}
+            <span className="font-mono text-cyan-300">{formatSymbol('U_{in}')}</span>,{' '}
+            <span className="font-mono text-cyan-300">{formatSymbol('D_z')}</span>
             ), aby wyświetlić kartę Show-Up ze wzorami i rolą fizyczną.
           </span>
         </div>

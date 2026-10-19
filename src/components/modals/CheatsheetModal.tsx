@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { X, BookOpen, Zap, Layers, Activity, TrendingUp, Cpu } from 'lucide-react';
-import { formatSchematicLabel } from '../../utils/label-formatter.tsx';
+import { SymbolParser } from '../../utils/symbol-parser.ts';
 
 interface Props {
   readonly isOpen: boolean;
@@ -111,7 +111,7 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-white text-sm">I Prawo Kirchhoffa (Prądowe - KCL)</span>
                 <span className="font-mono text-xs px-2.5 py-1 bg-slate-950 rounded-lg text-indigo-300 border border-slate-800">
-                  {formatSchematicLabel('∑ I_{węzeł} = 0')}
+                  {SymbolParser.formatToHtml('∑ I_{węzeł} = 0')}
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed">
@@ -119,7 +119,7 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 Prawo to jest bezpośrednią konsekwencją zasady zachowania ładunku elektrycznego.
               </p>
               <div className="mt-2.5 font-mono text-xs text-indigo-300 bg-slate-950/70 p-3 rounded-lg border border-slate-800">
-                {formatSchematicLabel('Węzeł diody Zenera: I_{Rs} = I_z + I_L')} → {formatSchematicLabel('I_z = I_{Rs} - I_L')}
+                {SymbolParser.formatToHtml('Węzeł diody Zenera: I_{Rs} = I_z + I_L')} → {SymbolParser.formatToHtml('I_z = I_{Rs} - I_L')}
               </div>
             </div>
 
@@ -128,14 +128,14 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-white text-sm">II Prawo Kirchhoffa (Napięciowe - KVL)</span>
                 <span className="font-mono text-xs px-2.5 py-1 bg-slate-950 rounded-lg text-indigo-300 border border-slate-800">
-                  {formatSchematicLabel('∑ U_{oczko} = 0')}
+                  {SymbolParser.formatToHtml('∑ U_{oczko} = 0')}
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed">
                 Suma algebraiczna napięć źródłowych w zamkniętym oczku jest równa sumie spadków napięć na wszystkich odbiornikach.
               </p>
               <div className="mt-2.5 font-mono text-xs text-indigo-300 bg-slate-950/70 p-3 rounded-lg border border-slate-800">
-                {formatSchematicLabel('Oczko tranzystora: U_{CC} - I_C · R_c - U_{CE} - I_E · R_e = 0')}
+                {SymbolParser.formatToHtml('Oczko tranzystora: U_{CC} - I_C · R_c - U_{CE} - I_E · R_e = 0')}
               </div>
             </div>
           </div>
@@ -148,7 +148,7 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-white text-sm">Dioda Prostownicza Krzemowa (Złącze P-N)</span>
                 <span className="font-mono text-xs px-2.5 py-1 bg-slate-950 rounded-lg text-cyan-300 border border-slate-800">
-                  {formatSchematicLabel('U_D ≈ 0.65 - 0.7V')}
+                  {SymbolParser.formatToHtml('U_D ≈ 0.65 - 0.7V')}
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed">
@@ -156,10 +156,10 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 W kierunku zaporowym płynie znikomy prąd wsteczny nasycenia.
               </p>
               <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs text-cyan-300 bg-slate-950/70 p-3 rounded-lg border border-slate-800">
-                <div>• Równanie Shockleya: {formatSchematicLabel('I_D = I_S · (e^(U_D / (n·U_T)) - 1)')}</div>
-                <div>• Napięcie zaporowe: {formatSchematicLabel('PIV \\ge 2 · U_m')}</div>
-                <div>• Rezystancja dynamiczna: {formatSchematicLabel('r_d = dU_D / dI_D \\approx U_T / I_D')}</div>
-                <div>• Napięcie termiczne: {formatSchematicLabel('U_T \\approx 26mV')} (przy 300K)</div>
+                <div>• Równanie Shockleya: {SymbolParser.formatToHtml('I_D = I_S · (e^(U_D / (n·U_T)) - 1)')}</div>
+                <div>• Napięcie zaporowe: {SymbolParser.formatToHtml('PIV \\ge 2 · U_m')}</div>
+                <div>• Rezystancja dynamiczna: {SymbolParser.formatToHtml('r_d = dU_D / dI_D \\approx U_T / I_D')}</div>
+                <div>• Napięcie termiczne: {SymbolParser.formatToHtml('U_T \\approx 26mV')} (przy 300K)</div>
               </div>
             </div>
 
@@ -168,7 +168,7 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-white text-sm">Dioda Zenera (Stabilizacja Napięcia)</span>
                 <span className="font-mono text-xs px-2.5 py-1 bg-slate-950 rounded-lg text-emerald-300 border border-slate-800">
-                  {formatSchematicLabel('U_{wy} = U_z = const')}
+                  {SymbolParser.formatToHtml('U_{wy} = U_z = const')}
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed">
@@ -176,10 +176,10 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 dzięki czemu wahania prądu wywołują minimalne zmiany napięcia wyjściowego.
               </p>
               <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs text-emerald-300 bg-slate-950/70 p-3 rounded-lg border border-slate-800">
-                <div>• Rezystor balastowy: {formatSchematicLabel('R_s = (U_{in} - U_z) / I_s')}</div>
-                <div>• Rezystancja dynamiczna: {formatSchematicLabel('r_z = \\Delta U_z / \\Delta I_z')} (5–20Ω)</div>
-                <div>• Warunek stabilizacji: {formatSchematicLabel('I_{z,min} \\le I_z \\le I_{z,max}')}</div>
-                <div>• Maksymalna moc: {formatSchematicLabel('P_{z,max} = U_z · I_{z,max}')}</div>
+                <div>• Rezystor balastowy: {SymbolParser.formatToHtml('R_s = (U_{in} - U_z) / I_s')}</div>
+                <div>• Rezystancja dynamiczna: {SymbolParser.formatToHtml('r_z = \\Delta U_z / \\Delta I_z')} (5–20Ω)</div>
+                <div>• Warunek stabilizacji: {SymbolParser.formatToHtml('I_{z,min} \\le I_z \\le I_{z,max}')}</div>
+                <div>• Maksymalna moc: {SymbolParser.formatToHtml('P_{z,max} = U_z · I_{z,max}')}</div>
               </div>
             </div>
           </div>
@@ -192,7 +192,7 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-white text-sm">Wzmocnienie i Tranzystor NPN w Układzie OE</span>
                 <span className="font-mono text-xs px-2.5 py-1 bg-slate-950 rounded-lg text-emerald-300 border border-slate-800">
-                  {formatSchematicLabel('I_C = \\beta · I_B')}
+                  {SymbolParser.formatToHtml('I_C = \\beta · I_B')}
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed">
@@ -201,12 +201,12 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 odwróceniem fazy o 180°.
               </p>
               <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs text-emerald-300 bg-slate-950/70 p-3 rounded-lg border border-slate-800">
-                <div>• Wzmocnienie: {formatSchematicLabel('k_u \\approx - (R_c \\parallel R_L) / (r_e + R_e)')}</div>
-                <div>• Z bocznikowaniem C_e: {formatSchematicLabel('k_u \\approx - (R_c \\parallel R_L) / r_e')}</div>
-                <div>• Opór wewnętrzny: {formatSchematicLabel('r_e \\approx 26mV / I_E')}</div>
-                <div>• Napięcie kolektora: {formatSchematicLabel('U_C = U_{CC} - I_C · R_c')}</div>
-                <div>• Dzielnik bazy: {formatSchematicLabel('U_B \\approx U_{CC} · R_{b2} / (R_{b1} + R_{b2})')}</div>
-                <div>• Napięcie emitera: {formatSchematicLabel('U_E = U_B - 0.7V')}</div>
+                <div>• Wzmocnienie: {SymbolParser.formatToHtml('k_u \\approx - (R_c \\parallel R_L) / (r_e + R_e)')}</div>
+                <div>• Z bocznikowaniem C_e: {SymbolParser.formatToHtml('k_u \\approx - (R_c \\parallel R_L) / r_e')}</div>
+                <div>• Opór wewnętrzny: {SymbolParser.formatToHtml('r_e \\approx 26mV / I_E')}</div>
+                <div>• Napięcie kolektora: {SymbolParser.formatToHtml('U_C = U_{CC} - I_C · R_c')}</div>
+                <div>• Dzielnik bazy: {SymbolParser.formatToHtml('U_B \\approx U_{CC} · R_{b2} / (R_{b1} + R_{b2})')}</div>
+                <div>• Napięcie emitera: {SymbolParser.formatToHtml('U_E = U_B - 0.7V')}</div>
               </div>
             </div>
 
@@ -220,13 +220,13 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
               <ul className="space-y-1.5 text-slate-300 list-disc list-inside">
                 <li>
-                  <strong className="text-white">Obszar aktywny (liniowy):</strong> Złącze B-E przewodzi ({formatSchematicLabel('U_{BE} \\approx 0.7V')}), złącze B-C zaporowo ({formatSchematicLabel('U_{CE} > 0.3V')}).
+                  <strong className="text-white">Obszar aktywny (liniowy):</strong> Złącze B-E przewodzi ({SymbolParser.formatToHtml('U_{BE} \\approx 0.7V')}), złącze B-C zaporowo ({SymbolParser.formatToHtml('U_{CE} > 0.3V')}).
                 </li>
                 <li>
-                  <strong className="text-white">Nasycenie (Saturation):</strong> Oba złącza przewodzą, {formatSchematicLabel('U_{CE,sat} \\approx 0.1-0.2V')}.
+                  <strong className="text-white">Nasycenie (Saturation):</strong> Oba złącza przewodzą, {SymbolParser.formatToHtml('U_{CE,sat} \\approx 0.1-0.2V')}.
                 </li>
                 <li>
-                  <strong className="text-white">Odcięcie (Cut-off):</strong> {formatSchematicLabel('U_{BE} < 0.5V')}, brak przepływu prądu ({formatSchematicLabel('I_C \\approx 0, U_C = U_{CC}')}).
+                  <strong className="text-white">Odcięcie (Cut-off):</strong> {SymbolParser.formatToHtml('U_{BE} < 0.5V')}, brak przepływu prądu ({SymbolParser.formatToHtml('I_C \\approx 0, U_C = U_{CC}')}).
                 </li>
               </ul>
             </div>

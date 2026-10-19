@@ -1,6 +1,6 @@
 {
-  "summary": "Plan ujednolicenia prezentacji symboli fizycznych i usunięcia artefaktów LaTeX we wszystkich modułach aplikacji DeSchema Mentor:\n- Rozbudowa uniwersalnego parsera symboli i formuł (formatSchematicLabel) z obsługą ułamków, indeksów, greki i czyszczeniem znaczników &, _, $.\n- Wdrożenie dynamicznego procesora etykiet wektorowych SVG zamieniającego indeksy na natywne elementy <tspan> oraz Unicode.\n- Ujednolicenie formatowania w czacie sokratejskim, krokach analizy (prompt, hint, reflection) oraz kartach Show-Up i ściągawkach.\n- Zapewnienie pełnej zgodności z zasadami SOLID, czystej architektury i rygorystycznego typowania TypeScript.",
-  "updatedAt": "2026-10-19T05:44:56.169377320Z",
+  "summary": "Zaktualizowany plan wdrożenia dedykowanego modułu SymbolParser w src/utils/symbol-parser.ts:\n- Architektura: statyczna klasa SymbolParser z metodami formatowania, w tym formatSymbol(label: string): string\n- Standard znaków: czyste znaki Unicode dla indeksów i greki z bezpiecznym fallbackiem HTML\n- Ujednolicenie i zastąpienie dotychczasowego formatera we wszystkich komponentach: SvgSchematicViewer, SocraticStepSection, SocraticChatPanel, SymbolShowUpPopover i CheatsheetModal\n- Pełna zgodność z SOLID, TypeScript strict typing i raport w docs/changes/",
+  "updatedAt": "2026-10-19T05:56:03.295451047Z",
   "requestFeedback": true,
   "userFacing": true
 }

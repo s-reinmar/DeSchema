@@ -13,7 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import type { Circuit, SocraticStep } from '../types/circuit.types.ts';
-import { formatRichScientificText } from '../utils/label-formatter.tsx';
+import { SymbolParser } from '../utils/symbol-parser.ts';
 import { SocraticChatPanel } from './SocraticChatPanel.tsx';
 
 interface Props {
@@ -69,7 +69,7 @@ export const SocraticStepSection: React.FC<Props> = ({
                 {isSelected && <Sparkles className="w-3.5 h-3.5 text-cyan-400" />}
               </div>
               <span className="text-xs font-semibold line-clamp-1 mt-1">
-                {formatRichScientificText(st.title)}
+                {SymbolParser.formatRichScientificText(st.title)}
               </span>
             </button>
           );
@@ -87,7 +87,7 @@ export const SocraticStepSection: React.FC<Props> = ({
               Pytanie sokratejskie • Krok {currentStep.stepNumber} z 4
             </span>
             <h2 className="text-base sm:text-lg font-bold text-white mt-1 leading-snug">
-              {formatRichScientificText(currentStep.promptQuestion)}
+              {SymbolParser.formatRichScientificText(currentStep.promptQuestion)}
             </h2>
           </div>
         </div>
@@ -127,7 +127,7 @@ export const SocraticStepSection: React.FC<Props> = ({
             <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div>
               <strong className="block text-amber-300 mb-1">Kierunek poszukiwań:</strong>
-              {formatRichScientificText(currentStep.hint)}
+              {SymbolParser.formatRichScientificText(currentStep.hint)}
             </div>
           </div>
         )}
@@ -140,7 +140,7 @@ export const SocraticStepSection: React.FC<Props> = ({
               <strong className="block text-emerald-300 mb-1">
                 Weryfikacja fizyczna i wyjaśnienie zjawiska:
               </strong>
-              {formatRichScientificText(currentStep.reflectionAnswer)}
+              {SymbolParser.formatRichScientificText(currentStep.reflectionAnswer)}
             </div>
           </div>
         )}
