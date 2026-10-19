@@ -1,0 +1,8 @@
+{
+  "name": "DeSchema Mentor",
+  "description": "Prowadzi krok po kroku * Analiza schematów i obwodów * Cierpliwy dialog bez gotowców",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

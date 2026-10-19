@@ -1,0 +1,91 @@
+{
+  "id": "zener-regulator",
+  "title": "Równoległy stabilizator parametryczny z diodą Zenera",
+  "description": "Układ stabilizacji napięcia stałego wykorzystujący zjawisko przebicia Zenera / lawinowego diody krzemowej spolaryzowanej w kierunku zaporowym.",
+  "svgViewBox": "0 0 680 380",
+  "svgContent": "<g class=\"circuit-layer\"><rect x=\"10\" y=\"10\" width=\"660\" height=\"360\" rx=\"12\" fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"4 4\" stroke-opacity=\"0.15\"/><g transform=\"translate(80, 180)\" id=\"elem-Vin\"><circle cx=\"0\" cy=\"0\" r=\"28\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"/><text x=\"0\" y=\"-38\" font-size=\"14\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"currentColor\">U_{in} (DC)</text><text x=\"0\" y=\"-8\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"#10b981\">+</text><text x=\"0\" y=\"16\" font-size=\"14\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"#ef4444\">-</text></g><line x1=\"80\" y1=\"152\" x2=\"80\" y2=\"90\" stroke=\"currentColor\" stroke-width=\"2.5\"/><line x1=\"80\" y1=\"90\" x2=\"170\" y2=\"90\" stroke=\"currentColor\" stroke-width=\"2.5\"/><line x1=\"80\" y1=\"208\" x2=\"80\" y2=\"290\" stroke=\"currentColor\" stroke-width=\"2.5\"/><line x1=\"80\" y1=\"290\" x2=\"560\" y2=\"290\" stroke=\"currentColor\" stroke-width=\"2.5\"/><g transform=\"translate(230, 90)\" id=\"elem-Rs\"><line x1=\"-60\" y1=\"0\" x2=\"-30\" y2=\"0\" stroke=\"currentColor\" stroke-width=\"2.5\"/><rect x=\"-30\" y=\"-14\" width=\"60\" height=\"28\" rx=\"3\" fill=\"currentColor\" fill-opacity=\"0.15\" stroke=\"currentColor\" stroke-width=\"2.5\"/><line x1=\"30\" y1=\"0\" x2=\"60\" y2=\"0\" stroke=\"currentColor\" stroke-width=\"2.5\"/><text x=\"0\" y=\"-22\" font-size=\"15\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"currentColor\">R_s</text></g><circle cx=\"380\" cy=\"90\" r=\"4\" fill=\"currentColor\"/><line x1=\"290\" y1=\"90\" x2=\"380\" y2=\"90\" stroke=\"currentColor\" stroke-width=\"2.5\"/><line x1=\"380\" y1=\"90\" x2=\"380\" y2=\"140\" stroke=\"currentColor\" stroke-width=\"2.5\"/><g transform=\"translate(380, 180)\" id=\"elem-Dz\"><line x1=\"0\" y1=\"-40\" x2=\"0\" y2=\"-18\" stroke=\"currentColor\" stroke-width=\"2.5\"/><path d=\"M -18 -18 L 18 -18 L 18 -10 M -18 -18 L -18 -26\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polygon points=\"-18,6 18,6 0,-18\" fill=\"currentColor\" fill-opacity=\"0.2\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/><line x1=\"0\" y1=\"6\" x2=\"0\" y2=\"40\" stroke=\"currentColor\" stroke-width=\"2.5\"/><text x=\"26\" y=\"2\" font-size=\"15\" font-weight=\"bold\" fill=\"currentColor\">D_z</text><text x=\"-28\" y=\"-14\" font-size=\"10\" fill=\"currentColor\" opacity=\"0.7\">K (+)</text><text x=\"-28\" y=\"16\" font-size=\"10\" fill=\"currentColor\" opacity=\"0.7\">A (-)</text></g><line x1=\"380\" y1=\"220\" x2=\"380\" y2=\"290\" stroke=\"currentColor\" stroke-width=\"2.5\"/><circle cx=\"380\" cy=\"290\" r=\"4\" fill=\"currentColor\"/><line x1=\"380\" y1=\"90\" x2=\"520\" y2=\"90\" stroke=\"currentColor\" stroke-width=\"2.5\"/><circle cx=\"520\" cy=\"90\" r=\"4\" fill=\"currentColor\"/><line x1=\"520\" y1=\"90\" x2=\"520\" y2=\"140\" stroke=\"currentColor\" stroke-width=\"2.5\"/><g transform=\"translate(520, 180)\" id=\"elem-RL\"><line x1=\"0\" y1=\"-40\" x2=\"0\" y2=\"-24\" stroke=\"currentColor\" stroke-width=\"2.5\"/><rect x=\"-12\" y=\"-24\" width=\"24\" height=\"48\" rx=\"3\" fill=\"currentColor\" fill-opacity=\"0.15\" stroke=\"currentColor\" stroke-width=\"2.5\"/><line x1=\"0\" y1=\"24\" x2=\"0\" y2=\"40\" stroke=\"currentColor\" stroke-width=\"2.5\"/><text x=\"22\" y=\"4\" font-size=\"15\" font-weight=\"bold\" fill=\"currentColor\">R_L</text></g><line x1=\"520\" y1=\"220\" x2=\"520\" y2=\"290\" stroke=\"currentColor\" stroke-width=\"2.5\"/><circle cx=\"520\" cy=\"290\" r=\"4\" fill=\"currentColor\"/><g transform=\"translate(300, 290)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"18\" stroke=\"currentColor\" stroke-width=\"2.5\"/><line x1=\"-16\" y1=\"18\" x2=\"16\" y2=\"18\" stroke=\"currentColor\" stroke-width=\"2.5\"/><line x1=\"-10\" y1=\"22\" x2=\"10\" y2=\"22\" stroke=\"currentColor\" stroke-width=\"2\"/><line x1=\"-5\" y1=\"26\" x2=\"5\" y2=\"26\" stroke=\"currentColor\" stroke-width=\"1.5\"/><text x=\"0\" y=\"40\" font-size=\"11\" text-anchor=\"middle\" fill=\"currentColor\" opacity=\"0.7\">GND (0V)</text></g><line x1=\"520\" y1=\"90\" x2=\"580\" y2=\"90\" stroke=\"currentColor\" stroke-width=\"2\" stroke-dasharray=\"3 3\"/><line x1=\"520\" y1=\"290\" x2=\"580\" y2=\"290\" stroke=\"currentColor\" stroke-width=\"2\" stroke-dasharray=\"3 3\"/><circle cx=\"584\" cy=\"90\" r=\"4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><circle cx=\"584\" cy=\"290\" r=\"4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><text x=\"605\" y=\"94\" font-size=\"13\" font-weight=\"bold\" fill=\"currentColor\">+ U_{wy} = U_z</text><text x=\"605\" y=\"294\" font-size=\"13\" font-weight=\"bold\" fill=\"currentColor\">- (GND)</text></g>",
+  "symbols": [
+    {
+      "id": "Uin",
+      "label": "U_{in}",
+      "name": "Niestabilizowane napięcie wejściowe",
+      "x": 80,
+      "y": 180,
+      "physicalRole": "Źródło zasilania o zmiennym lub tętniącym napięciu stałym DC, które musi zawsze przekraczać wymagane napięcie Zenera U_z.",
+      "formula": "U_{in,min} > U_z + I_{s,min} \\cdot R_s",
+      "formulaDescription": "Warunek konieczny podtrzymania prądu diody powyżej kolana charakterystyki zaporowej.",
+      "typicalValue": "9V – 18V DC",
+      "explanation": "Niestabilizowane napięcie wejściowe zasilające stabilizator."
+    },
+    {
+      "id": "Rs",
+      "label": "R_s",
+      "name": "Rezystor balastowy szeregowy",
+      "x": 230,
+      "y": 90,
+      "physicalRole": "Ogranicza maksymalny prąd wpływający do diody Zenera i przejmuje nadwyżkę napięcia zasilania U_Rs = U_in - U_z.",
+      "formula": "R_{s,max} = \\frac{U_{in,min} - U_z}{I_{z,min} + I_{L,max}}, \\quad R_{s,min} = \\frac{U_{in,max} - U_z}{I_{z,max} + I_{L,min}}",
+      "formulaDescription": "Rezystancję dobiera się z przedziału bezpiecznego R_s,min <= R_s <= R_s,max.",
+      "typicalValue": "100Ω – 470Ω / 1W – 2W",
+      "explanation": "Rezystor szeregowy chroniący diodę i stabilizujący punkt pracy."
+    },
+    {
+      "id": "Dz",
+      "label": "D_z",
+      "name": "Dioda Zenera (polaryzacja zaporowa)",
+      "x": 380,
+      "y": 180,
+      "physicalRole": "Utrzymuje niemal stały spadek napięcia U_z dzięki stromemu kolanu charakterystyki przebicia lawinowego/Zenera.",
+      "formula": "P_z = U_z \\cdot I_z \\le P_{z,max}, \\quad r_z = \\frac{\\Delta U_z}{\\Delta I_z}",
+      "formulaDescription": "Moc wydzielana na złączu nie może przekroczyć mocy znamionowej P_z,max.",
+      "typicalValue": "BZX55C5V1 (U_z = 5.1V, P_max = 500mW, r_z ≈ 15Ω)",
+      "explanation": "Dioda Zenera stabilizująca napięcie wyjściowe obwodu."
+    },
+    {
+      "id": "RL",
+      "label": "R_L",
+      "name": "Odbiornik (Rezystancja obciążenia)",
+      "x": 520,
+      "y": 180,
+      "physicalRole": "Odbiera prąd stały przy stabilnym napięciu wyjściowym U_wy = U_z.",
+      "formula": "I_L = \\frac{U_z}{R_L}, \\quad P_L = \\frac{U_z^2}{R_L}",
+      "formulaDescription": "Wpływa na bilans prądów w węźle: I_s = I_z + I_L.",
+      "typicalValue": "220Ω – 2.2kΩ",
+      "explanation": "Zasilany układ z równoległego węzła diody Zenera."
+    }
+  ],
+  "socraticSteps": [
+    {
+      "stepNumber": 1,
+      "title": "Warunek polaryzacji zaporowej i progowej",
+      "promptQuestion": "Jakie warunki dotyczące polaryzacji oraz wartości napięcia U_in muszą być spełnione, aby dioda D_z zaczęła pełnić funkcję stabilizatora?",
+      "hint": "Zwróć uwagę, do którego wyprowadzenia diody (anoda czy katoda) podłączony jest dodatni biegun zasilania oraz co określa kolano charakterystyki I(V).",
+      "reflectionAnswer": "Dioda Zenera musi być włączona zaporowo (katoda podłączona do wyższego potencjału dodatniego). Ponadto napięcie wejściowe U_in musi być bezwzględnie większe od napięcia Zenera U_z o spadek na rezystorze R_s przy minimalnym prądzie stabilizacji I_{z,min}.",
+      "targetSymbolIds": ["Uin", "Dz", "Rs"]
+    },
+    {
+      "stepNumber": 2,
+      "title": "I Prawo Kirchhoffa dla węzła stabilizacji",
+      "promptQuestion": "Jeśli obciążenie R_L nagle zmniejszy pobór prądu (I_L maleje), co natychmiast stanie się z prądem płynącym przez diodę Zenera I_z?",
+      "hint": "Zastosuj I prawo Kirchhoffa w węźle nad diodą Zenera: I_s = I_z + I_L. Napięcie w węźle jest utrzymywane na stałym poziomie U_z.",
+      "reflectionAnswer": "Ponieważ spadek na rezystorze R_s wynosi w przybliżeniu U_in - U_z = const, prąd całkowity I_s jest stały. Zgodnie z I prawem Kirchhoffa (I_s = I_z + I_L), każdy ubytek prądu obciążenia Delta I_L zostaje natychmiast przejęty przez diodę Zenera: I_z rośnie dokładnie o tyle, o ile zmalał I_L.",
+      "targetSymbolIds": ["Rs", "Dz", "RL"]
+    },
+    {
+      "stepNumber": 3,
+      "title": "Krytyczny dobór rezystora szeregowego R_s",
+      "promptQuestion": "Dlaczego odłączenie obciążenia (R_L -> nieskończoność, stan jałowy) stanowi najbardziej niebezpieczny moment dla diody Zenera?",
+      "hint": "Przeanalizuj moc traconą na diodzie P_z = U_z * I_z w sytuacji, gdy prąd I_L = 0.",
+      "reflectionAnswer": "Gdy obciążenie zostanie odłączone (I_L = 0), cały prąd płynący przez rezystor R_s wpływa do diody Zenera (I_z = I_s). Moc wydzielana na złączu P_z = U_z * (U_in - U_z) / R_s osiąga maksimum. Jeśli R_s dobrano za mały, dioda ulegnie natychmiastowemu zniszczeniu termicznemu.",
+      "targetSymbolIds": ["Rs", "Dz"]
+    },
+    {
+      "stepNumber": 4,
+      "title": "Rzeczywista rezystancja dynamiczna r_z",
+      "promptQuestion": "Dlaczego w praktyce napięcie wyjściowe U_wy minimalnie wzrasta, gdy napięcie wejściowe U_in rośnie o kilka woltów?",
+      "hint": "Rzeczywista charakterystyka przebicia Zenera nie jest idealnie pionową ścianą, lecz posiada skończone nachylenie Delta U_z / Delta I_z.",
+      "reflectionAnswer": "Dioda Zenera w obszarze stabilizacji posiada małą, ale niezerową rezystancję dynamiczną r_z = dU_z / dI_z (typowo kilka do kilkunastu omów). Układ stanowi więc dzielnik napięcia dla przyrostów sygnału o współczynniku Delta U_wy / Delta U_in ~= r_z / (R_s + r_z).",
+      "targetSymbolIds": ["Dz", "Rs", "Uin"]
+    }
+  ]
+}
