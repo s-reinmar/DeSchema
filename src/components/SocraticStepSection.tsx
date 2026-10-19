@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { Circuit, SocraticStep } from '../types/circuit.types.ts';
 import { SymbolParser } from '../utils/symbol-parser.ts';
+import { SocraticProgressBar } from './SocraticProgressBar.tsx';
 import { SocraticChatPanel } from './SocraticChatPanel.tsx';
 
 interface Props {
@@ -41,7 +42,14 @@ export const SocraticStepSection: React.FC<Props> = ({
   };
 
   return (
-    <div className="w-full flex flex-col gap-6">
+    <div className="w-full flex flex-col gap-5">
+      {/* Visual Progress Bar Indicator */}
+      <SocraticProgressBar
+        currentStepNumber={currentStepNumber}
+        totalSteps={steps.length}
+        currentStepTitle={currentStep.title}
+      />
+
       {/* 4 Steps Navigation Tabs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {steps.map((st) => {
