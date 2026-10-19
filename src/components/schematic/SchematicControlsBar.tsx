@@ -13,7 +13,6 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
-  RotateCcw,
   Tag,
   Trash2,
   CircuitBoard,
@@ -33,7 +32,6 @@ interface Props {
   readonly onZoomIn: () => void;
   readonly onZoomOut: () => void;
   readonly onZoomToFit: () => void;
-  readonly onResetZoom: () => void;
   readonly onToggleAnnotationMode: () => void;
   readonly onClearAnnotations: () => void;
 }
@@ -50,7 +48,6 @@ export const SchematicControlsBar: React.FC<Props> = ({
   onZoomIn,
   onZoomOut,
   onZoomToFit,
-  onResetZoom,
   onToggleAnnotationMode,
   onClearAnnotations,
 }) => {
@@ -169,14 +166,6 @@ export const SchematicControlsBar: React.FC<Props> = ({
           >
             <Maximize2 className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Dopasuj</span>
-          </button>
-          <button
-            onClick={onResetZoom}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition text-xs font-mono cursor-pointer"
-            title="Resetuj widok (100%)"
-            aria-label="Resetuj widok"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
 

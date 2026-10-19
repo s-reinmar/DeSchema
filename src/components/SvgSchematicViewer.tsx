@@ -53,7 +53,6 @@ export const SvgSchematicViewer: React.FC<Props> = ({
     zoomIn,
     zoomOut,
     zoomToFit,
-    resetTransform,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
@@ -133,7 +132,6 @@ export const SvgSchematicViewer: React.FC<Props> = ({
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         onZoomToFit={zoomToFit}
-        onResetZoom={resetTransform}
         onToggleAnnotationMode={() => setIsAnnotationMode((prev) => !prev)}
         onClearAnnotations={handleClearAnnotations}
       />

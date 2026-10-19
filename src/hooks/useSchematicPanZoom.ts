@@ -18,7 +18,6 @@ interface UseSchematicPanZoomReturn {
   readonly zoomIn: () => void;
   readonly zoomOut: () => void;
   readonly zoomToFit: () => void;
-  readonly resetTransform: () => void;
   readonly handleMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
   readonly handleMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void;
   readonly handleMouseUp: () => void;
@@ -81,14 +80,6 @@ export function useSchematicPanZoom(
     });
   }, []);
 
-  const resetTransform = useCallback(() => {
-    setTransform({
-      scale: DEFAULT_SCALE,
-      translateX: 0,
-      translateY: 0,
-    });
-  }, []);
-
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     // Only primary mouse button and not if clicking an interactive control
     if (e.button !== 0) return;
@@ -128,7 +119,6 @@ export function useSchematicPanZoom(
     zoomIn,
     zoomOut,
     zoomToFit,
-    resetTransform,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
