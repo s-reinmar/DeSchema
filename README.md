@@ -25,10 +25,8 @@ Domyślnym motywem wizualnym aplikacji jest **tryb ciemny** (*Default Dark Mode*
   - **Historia sesji / Wznów poprzednią:** natychmiastowe przywracanie zapisanych punktów kontrolnych z pamięci lokalnej.
 - **Moduł „Układy” (`CircuitsManagerModal`):**
   - Dostęp do relacyjnej bazy Cloud SQL: katalogu układów wzorcowych oraz prywatnych obwodów użytkownika.
-  - Akcja **„Wgraj Schemat”** – bezpośrednie uruchomienie multimodalnego kreatora AI z poziomu panelu układów.
+  - Akcja **„Wgraj Schemat”** – bezpośrednie uruchomienie multimodalnego kreatora AI z poziomu panelu układów (wspiera pliki graficzne PNG/JPG oraz wklejanie ze schowka `Ctrl+V`).
   - Akcja **„Ręczny edytor”** – formularz tworzenia schematów z ręczną definicją wektora SVG i pytań sokratejskich.
-- **Szybka akcja „Wgraj Schemat” (pasek główny oraz menu mobilne):**
-  - Wygodny przycisk akcji z ikoną wysyłania otwierający kreator analizy schematów.
 - **Uwierzytelnianie użytkownika (`UserAuthButton`):**
   - Integracja z Google Sign-In (Firebase Authentication) z prezentacją awatara, adresu e-mail oraz synchronizacją tokenu JWT.
 - **Ustawienia (`SettingsDropdown`):**
