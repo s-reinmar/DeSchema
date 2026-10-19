@@ -22,11 +22,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (typeof window !== 'undefined' && window.localStorage) {
       const saved = window.localStorage.getItem('deschema_theme') as Theme | null;
       if (saved === 'dark' || saved === 'light') return saved;
-      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-        return 'light';
-      }
     }
-    return 'dark'; // Default dark mode for schematic contrast
+    return 'dark'; // Domyślny tryb ciemny (Default Dark Mode)
   });
 
   const isInitialMount = useRef(true);
