@@ -1,15 +1,15 @@
 /**
  * @file ThemeContext.tsx
- * @description Theme context managing dark and light mode state and root HTML class.
+ * @description Theme context managing dark and light mode state with smooth animated transitions.
  * @author s-reinmar
  * @license MIT
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 
-type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light';
 
-interface ThemeContextType {
+export interface ThemeContextType {
   readonly theme: Theme;
   readonly toggleTheme: () => void;
   readonly setTheme: (theme: Theme) => void;
@@ -22,12 +22,25 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (typeof window !== 'undefined' && window.localStorage) {
       const saved = window.localStorage.getItem('deschema_theme') as Theme | null;
       if (saved === 'dark' || saved === 'light') return saved;
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        return 'light';
+      }
     }
     return 'dark'; // Default dark mode for schematic contrast
   });
 
+  const isInitialMount = useRef(true);
+
   useEffect(() => {
     const root = document.documentElement;
+
+    // Apply smooth transition class only after initial mount to avoid flickering on page load
+    if (!isInitialMount.current) {
+      root.classList.add('theme-transitioning');
+    } else {
+      isInitialMount.current = false;
+    }
+
     if (theme === 'dark') {
       root.classList.add('dark');
       root.classList.remove('light');
@@ -35,11 +48,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       root.classList.add('light');
       root.classList.remove('dark');
     }
+
     try {
       window.localStorage?.setItem('deschema_theme', theme);
     } catch {
-      // ignore
+      // ignore storage unavailability in restrictive iframes
     }
+
+    const timer = setTimeout(() => {
+      root.classList.remove('theme-transitioning');
+    }, 400);
+
+    return () => clearTimeout(timer);
   }, [theme]);
 
   const toggleTheme = () => {

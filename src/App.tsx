@@ -162,7 +162,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <SettingsProvider>
-        <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950">
+        <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950 transition-colors duration-300">
           <TopNavbar
             summaries={summaries}
             currentCircuitId={currentCircuitId}

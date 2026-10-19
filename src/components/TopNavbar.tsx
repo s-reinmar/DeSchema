@@ -110,13 +110,13 @@ export const TopNavbar: React.FC<Props> = ({
             <button
               onClick={toggleTheme}
               aria-label="Przełącz motyw"
-              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition cursor-pointer"
+              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-all duration-300 cursor-pointer active:scale-90"
               title={theme === 'dark' ? 'Włącz tryb jasny' : 'Włącz tryb ciemny'}
             >
               {theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-amber-400" />
+                <Sun className="w-5 h-5 text-amber-400 transition-transform duration-300 hover:rotate-45" />
               ) : (
-                <Moon className="w-5 h-5 text-indigo-400" />
+                <Moon className="w-5 h-5 text-indigo-500 transition-transform duration-300 -rotate-12 hover:rotate-0" />
               )}
             </button>
 
