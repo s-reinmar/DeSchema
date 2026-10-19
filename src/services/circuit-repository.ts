@@ -1,7 +1,7 @@
 /**
  * @file circuit-repository.ts
- * @description Implementation of ICircuitRepository for circuit lifecycle, storage, and navigation.
- * @author s-reinmar
+ * @description Implementation of ICircuitRepository loading circuits from /public/resources/ (SSOT) and localStorage.
+ * @author @s-reinmar
  * @license MIT
  */
 
@@ -9,7 +9,7 @@ import type { Circuit, CircuitSummary, ValidationResult } from '../types/circuit
 import type { ICircuitRepository } from '../interfaces/circuit-repository.interface.ts';
 import type { IStorageService } from '../interfaces/storage.interface.ts';
 import { CircuitValidator } from './circuit-validator.ts';
-import { PREDEFINED_CIRCUITS } from '../data/predefined-circuits.ts';
+import { PREDEFINED_RESOURCE_FILES, PREDEFINED_CIRCUITS_META } from '../data/predefined-circuits.ts';
 
 const CUSTOM_CIRCUITS_STORAGE_KEY = 'deschema_mentor_custom_circuits';
 
@@ -19,13 +19,13 @@ export class CircuitRepository implements ICircuitRepository {
 
   public constructor(
     private readonly storageService: IStorageService,
-    initialPredefined: readonly Circuit[] = PREDEFINED_CIRCUITS
+    initialPredefined: readonly Circuit[] = []
   ) {
     initialPredefined.forEach((c) => this.predefinedMap.set(c.id, c));
   }
 
   /**
-   * Initializes predefined circuits from /resources/ and hydrates localStorage customs.
+   * Initializes predefined circuits from /public/resources/ via HTTP fetch and hydrates localStorage customs.
    */
   public async initialize(): Promise<void> {
     await this.tryFetchResources();
@@ -41,11 +41,19 @@ export class CircuitRepository implements ICircuitRepository {
   }
 
   public getSummaries(): readonly CircuitSummary[] {
-    const predefinedSummaries = Array.from(this.predefinedMap.values()).map((c) => ({
-      id: c.id,
-      title: c.title,
-      isCustom: false,
-    }));
+    // If predefined circuits haven't finished fetching yet, use PREDEFINED_CIRCUITS_META
+    const predefinedSummaries =
+      this.predefinedMap.size > 0
+        ? Array.from(this.predefinedMap.values()).map((c) => ({
+            id: c.id,
+            title: c.title,
+            isCustom: false,
+          }))
+        : PREDEFINED_CIRCUITS_META.map((meta) => ({
+            id: meta.id,
+            title: meta.title,
+            isCustom: false,
+          }));
 
     const customSummaries = Array.from(this.customMap.values()).map((c) => ({
       id: c.id,
@@ -75,31 +83,28 @@ export class CircuitRepository implements ICircuitRepository {
   }
 
   public getNextCircuitId(currentId: string): string {
-    const all = this.getAll();
-    if (all.length === 0) return currentId;
-    const currentIndex = all.findIndex((c) => c.id === currentId);
-    if (currentIndex === -1) return all[0].id;
-    const nextIndex = (currentIndex + 1) % all.length;
-    return all[nextIndex].id;
+    const summaries = this.getSummaries();
+    if (summaries.length === 0) return currentId;
+    const currentIndex = summaries.findIndex((c) => c.id === currentId);
+    if (currentIndex === -1) return summaries[0].id;
+    const nextIndex = (currentIndex + 1) % summaries.length;
+    return summaries[nextIndex].id;
   }
 
   public getPreviousCircuitId(currentId: string): string {
-    const all = this.getAll();
-    if (all.length === 0) return currentId;
-    const currentIndex = all.findIndex((c) => c.id === currentId);
-    if (currentIndex === -1) return all[all.length - 1].id;
-    const prevIndex = (currentIndex - 1 + all.length) % all.length;
-    return all[prevIndex].id;
+    const summaries = this.getSummaries();
+    if (summaries.length === 0) return currentId;
+    const currentIndex = summaries.findIndex((c) => c.id === currentId);
+    if (currentIndex === -1) return summaries[summaries.length - 1].id;
+    const prevIndex = (currentIndex - 1 + summaries.length) % summaries.length;
+    return summaries[prevIndex].id;
   }
 
+  /**
+   * Fetches the 3 built-in circuits from the Single Source of Truth at /resources/ (served from public/resources/).
+   */
   private async tryFetchResources(): Promise<void> {
-    const resourceFiles = [
-      'half-wave-rectifier.json',
-      'npn-common-emitter.json',
-      'zener-regulator.json',
-    ];
-
-    for (const fileName of resourceFiles) {
+    for (const fileName of PREDEFINED_RESOURCE_FILES) {
       try {
         const response = await fetch(`/resources/${fileName}`);
         if (!response.ok) continue;
@@ -108,8 +113,8 @@ export class CircuitRepository implements ICircuitRepository {
         if (validation.isValid && validation.circuit) {
           this.predefinedMap.set(validation.circuit.id, { ...validation.circuit, isCustom: false });
         }
-      } catch {
-        // Fallback to static bundled data if offline or fetch restricted
+      } catch (err) {
+        console.warn(`[CircuitRepository] Nie udało się pobrać /resources/${fileName}:`, err);
       }
     }
   }

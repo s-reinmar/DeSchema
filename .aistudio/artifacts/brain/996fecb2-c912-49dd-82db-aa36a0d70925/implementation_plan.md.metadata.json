@@ -1,0 +1,6 @@
+{
+  "summary": "Plan ujednolicenia architektury zasobów obwodów w DeSchema Mentor: likwidacja duplikacji katalogów, ustanowienie public/resources jako Single Source of Truth (SSOT) oraz aktualizacja CircuitRepository i predefined-circuits.",
+  "updatedAt": "2026-10-19T05:25:13.547110249Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

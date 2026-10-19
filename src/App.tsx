@@ -1,11 +1,12 @@
 /**
  * @file App.tsx
  * @description Main application entry point uniting dual-panel Socratic Mentor (left) and SvgSchematicViewer (right).
- * @author s-reinmar
+ * @author @s-reinmar
  * @license MIT
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext.tsx';
 import { LocalStorageService } from './services/local-storage-storage.service.ts';
 import { CircuitRepository } from './services/circuit-repository.ts';
@@ -21,17 +22,21 @@ export default function App() {
   const repository = useMemo(() => new CircuitRepository(storageService), [storageService]);
 
   const [circuits, setCircuits] = useState<readonly Circuit[]>(() => repository.getAll());
-  const [currentCircuitId, setCurrentCircuitId] = useState<string>(() => {
-    return repository.getAll()[0]?.id ?? 'half-wave-rectifier';
-  });
+  const [currentCircuitId, setCurrentCircuitId] = useState<string>('half-wave-rectifier');
   const [currentStepNumber, setCurrentStepNumber] = useState<1 | 2 | 3 | 4>(1);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     repository.initialize().then(() => {
-      setCircuits(repository.getAll());
+      const all = repository.getAll();
+      setCircuits(all);
+      if (all.length > 0 && !repository.getById(currentCircuitId)) {
+        setCurrentCircuitId(all[0].id);
+      }
+      setIsLoaded(true);
     });
-  }, [repository]);
+  }, [repository, currentCircuitId]);
 
   const currentCircuit = useMemo(() => {
     return repository.getById(currentCircuitId) ?? circuits[0];
@@ -85,7 +90,20 @@ export default function App() {
     setCurrentStepNumber(1);
   };
 
-  const currentStep = currentCircuit?.socraticSteps.find((s) => s.stepNumber === currentStepNumber);
+  if (!isLoaded && !currentCircuit) {
+    return (
+      <ThemeProvider>
+        <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+            <p className="text-sm font-mono text-slate-400">Wczytywanie obwodów wzorcowych DeSchema...</p>
+          </div>
+        </div>
+      </ThemeProvider>
+    );
+  }
+
+  const currentStep = currentCircuit?.socraticSteps?.find((s) => s.stepNumber === currentStepNumber) ?? currentCircuit?.socraticSteps?.[0];
   const activeTargetSymbolIds = currentStep?.targetSymbolIds ?? [];
 
   return (
