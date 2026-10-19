@@ -17,6 +17,7 @@ import {
   Lock,
   Trash2,
   LogIn,
+  Upload,
 } from 'lucide-react';
 import type { Circuit, CircuitSummary } from '../../types/circuit.types.ts';
 import { SymbolParser } from '../../utils/symbol-parser.ts';
@@ -146,17 +147,17 @@ export const CircuitsManagerModal: React.FC<Props> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsAiWizardOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded-xl transition cursor-pointer"
-                title="Generuj nowy układ z analizy obrazu lub wklejonego schematu"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 hover:bg-emerald-500/25 rounded-xl transition cursor-pointer shadow-xs"
+                title="Wgraj schemat z pliku graficznego (PNG/JPG) lub wklej ze schowka (Ctrl+V) do analizy AI Gemini"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Generuj z obrazu (AI)</span>
+                <Upload className="w-3.5 h-3.5" />
+                <span>Wgraj Schemat</span>
               </button>
 
               {user && onSaveCustomCircuit && (
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl transition cursor-pointer shadow-sm"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl transition cursor-pointer shadow-xs"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
                   <span>Ręczny edytor</span>
@@ -189,16 +190,25 @@ export const CircuitsManagerModal: React.FC<Props> = ({
             ) : displayedSummaries.length === 0 ? (
               <div className="p-8 rounded-2xl border-2 border-dashed border-slate-800 text-center flex flex-col items-center justify-center gap-2">
                 <p className="text-sm text-slate-400 font-medium">Brak własnych obwodów w chmurze.</p>
-                <p className="text-xs text-slate-500">Kliknij „Dodaj obwód”, aby zapisać swój pierwszy projekt.</p>
-                {user && onSaveCustomCircuit && (
+                <p className="text-xs text-slate-500">Wgraj grafikę ze schematem do analizy AI lub stwórz układ ręcznie.</p>
+                <div className="flex items-center gap-2 mt-2">
                   <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="mt-2 flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-cyan-500 text-slate-950 rounded-xl transition cursor-pointer"
+                    onClick={() => setIsAiWizardOpen(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl transition cursor-pointer shadow-sm"
                   >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    <span>Utwórz nowy obwód</span>
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Wgraj Schemat</span>
                   </button>
-                )}
+                  {user && onSaveCustomCircuit && (
+                    <button
+                      onClick={() => setIsCreateModalOpen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition cursor-pointer"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      <span>Ręczny edytor</span>
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">

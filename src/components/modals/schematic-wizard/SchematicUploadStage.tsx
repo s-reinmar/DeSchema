@@ -169,7 +169,7 @@ export const SchematicUploadStage: React.FC<Props> = ({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && processFile(e.target.files[0])}
           />

@@ -91,10 +91,10 @@ export const SchematicAiWizardModal: React.FC<Props> = ({
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                Kreator Układu ze Schematu (Multimodal AI)
+                Wgraj Schemat (Analiza Multimodalna Gemini)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Wgraj zdjęcie, wklej ze schowka lub przeciągnij schemat obwodu, aby wygenerować wektor SVG i 4 pytania sokratejskie.
+                Wgraj plik graficzny (PNG/JPG), przeciągnij schemat lub wklej ze schowka (Ctrl+V), aby wygenerować wektor SVG i 4 pytania sokratejskie.
               </p>
             </div>
           </div>

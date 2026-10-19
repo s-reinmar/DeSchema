@@ -4,7 +4,7 @@
 
 **Autor:** [@s-reinmar](https://github.com/s-reinmar)  
 **Licencja:** [MIT License](./LICENSE)  
-**Wersja:** 1.3.0 (Interactive Vector Engine, Session Persistence & Dual Theme Architecture)  
+**Wersja:** 1.4.0 (Cloud SQL PostgreSQL, Firebase Authentication & Multimodal AI Circuit Generator)  
 
 ---
 
@@ -23,8 +23,14 @@ Domyślnym motywem wizualnym aplikacji jest **tryb ciemny** (*Default Dark Mode*
   - **Zapisz postęp (Eksportuj do JSON):** eksportuje pełny stan aplikacji (identyfikator obwodu, aktywny krok analizy, historię konwersacji czatbota, znaczniki i adnotacje schematu oraz timestamp).
   - **Wczytaj sesję (Importuj z JSON):** bezpieczny import stanu z pliku JSON wraz z walidacją struktury.
   - **Historia sesji / Wznów poprzednią:** natychmiastowe przywracanie zapisanych punktów kontrolnych z pamięci lokalnej.
-- **Moduł „Układy” (za Sesją i przed Ustawieniami):**
-  - Okno modalne (`CircuitsManagerModal`) prezentujące katalog obwodów wzorcowych, ich opisy fizyczne oraz zarezerwowaną przestrzeń dla nowych projektów.
+- **Moduł „Układy” (`CircuitsManagerModal`):**
+  - Dostęp do relacyjnej bazy Cloud SQL: katalogu układów wzorcowych oraz prywatnych obwodów użytkownika.
+  - Akcja **„Wgraj Schemat”** – bezpośrednie uruchomienie multimodalnego kreatora AI z poziomu panelu układów.
+  - Akcja **„Ręczny edytor”** – formularz tworzenia schematów z ręczną definicją wektora SVG i pytań sokratejskich.
+- **Szybka akcja „Wgraj Schemat” (pasek główny oraz menu mobilne):**
+  - Wygodny przycisk akcji z ikoną wysyłania otwierający kreator analizy schematów.
+- **Uwierzytelnianie użytkownika (`UserAuthButton`):**
+  - Integracja z Google Sign-In (Firebase Authentication) z prezentacją awatara, adresu e-mail oraz synchronizacją tokenu JWT.
 - **Ustawienia (`SettingsDropdown`):**
   - Konfiguracja parametrów dydaktycznych, wybór preferowanego modelu Gemini oraz przełącznik toku głębokiego myślenia (*Thinking Mode*).
 - **Pomoc (`HelpDrawer`):**
@@ -37,62 +43,84 @@ Domyślnym motywem wizualnym aplikacji jest **tryb ciemny** (*Default Dark Mode*
 
 ---
 
-### 2. Układ Dual-Panel Workspace:
+### 2. Baza Danych Google Cloud SQL & Autoryzacja Firebase:
+- **Relacyjna Baza Cloud SQL PostgreSQL:**
+  - Architektura oparta o ORM Drizzle (`drizzle-orm` / `pg`).
+  - Tabela `circuits` przechowuje znormalizowane schematy:
+    - `id` (klucz główny), `title`, `description`, `category`, `svg_view_box`, `svg_content`.
+    - `symbols` (struktura JSONB komponentów z rolami fizycznymi i formułami).
+    - `socratic_steps` (struktura JSONB 4 sokratejskich kroków dydaktycznych).
+    - `owner_id` (identyfikator użytkownika Firebase dla obwodów prywatnych).
+    - `is_public` (flaga katalogu publicznego).
+    - `created_at`, `updated_at`.
+- **System Uprawnień i Bezpieczeństwa:**
+  - Trasa API `/api/circuits` zabezpieczona middleware'em weryfikującym tokeny JWT (`AuthRequest`).
+  - Użytkownicy niezalogowani mają dostęp w trybie odczytu do katalogu publicznego.
+  - Użytkownicy zalogowani kontem Google posiadają odizolowany magazyn prywatnych obwodów z pełnym cyklem CRUD.
+- **Odporność na awarie (Resilient Cache Fallback):**
+  - W przypadku braku łączności z Cloud SQL aplikacja transparentnie przełącza się na lokalną bazę predefiniowanych obwodów JSON.
+
+---
+
+### 3. Wgrywanie i Generowanie Schematów przez Multimodalne AI (Gemini):
+- **Uniwersalne metody wprowadzania obrazu (`SchematicUploadStage`):**
+  - **Przeciągnij i upuść (Drag & Drop):** obsługa plików graficznych PNG, JPG, JPEG, WebP.
+  - **Wybór z dysku:** klasyczny selektor plików z natywnym filtrowaniem formatów rastrowych.
+  - **Wklejanie ze schowka (Ctrl+V / Cmd+V):** globalny i kontenerowy nasłuch zdarzeń wklejania – użytkownik może wkleić zrzut ekranu schematu bezpośrednio ze schowka systemowego bez konieczności zapisywania pliku na dysku.
+- **Multimodalna Analiza Geometrii Obwodu (`CircuitAnalyzerService`):**
+  - Wykorzystanie modelu `gemini-3.8-flash` z biblioteki `@google/genai` (SDK 2.4.0) za pośrednictwem endpointu `POST /api/circuits/analyze-image`.
+  - Generowanie czystego kodu wektorowego SVG (`<rect>`, `<path>`, `<circle>`, `<line>`, `<text>`) o spójnej stylistyce laboratoryjnej.
+  - Automatyczna detekcja węzłów, etykiet zasilania ($V_{CC}$, $GND$) oraz punktów kontrolnych ($TP_1, TP_2, \dots$).
+  - Ekstrakcja symboli obwodu z określeniem ich roli fizycznej, wzorów projektowych i typowych wartości komponentów.
+- **Generowanie 4-stopniowych Pytań Sokratejskich:**
+  - **Krok 1 (Topologia i polaryzacja wstępna):** rozpoznanie węzłów, kierunków prądów i stanu spoczynkowego.
+  - **Krok 2 (Punkt pracy i dynamika sygnału):** bilans napięć KVL/KCL, przewodzenie elementów nieliniowych.
+  - **Krok 3 (Ekstremalne warunki pracy):** maksymalne dopuszczalne napięcia wsteczne, moce strat i tętnienia.
+  - **Krok 4 (Stany przejściowe i diagnostyka awarii):** zachowanie przy zwarciu/rozwarciu, stałe czasowe $\tau$.
+- **Interaktywny Kreator i Edytor Przed Zapisem (`SchematicEditorStage`):**
+  - Porównawczy widok side-by-side wgranego zdjęcia rastrowego z wygenerowanym wektorem SVG.
+  - Edycja metadanych (tytuł, opis, kategoria, viewBox).
+  - Wygodny edytor pytań sokratejskich, wskazówek oraz wyjaśnień.
+  - Jedno-klikowy zapis wygenerowanego schematu bezpośrednio do bazy Cloud SQL PostgreSQL.
+
+---
+
+### 4. Układ Dual-Panel Workspace:
 
 #### A. Lewy Panel – Pedagogika Sokratejska & Dialog:
 - **Wskaźnik postępu analizy (`SocraticProgressBar`):**
   - Dynamiczny pasek postępu wizualizujący aktualny etap analizy (1–4), procent ukończenia oraz stan poszczególnych faz.
 - **Nawigacja etapowa (`SocraticStepSection`):**
-  - 4 etapy poznawcze:
-    1. *Krok 1: Topologia i kierunek przepływu ładunków*
-    2. *Krok 2: Punkt pracy (polaryzacja DC i bilans napięć)*
-    3. *Krok 3: Dynamika sygnałowa (AC i zjawiska przejściowe)*
-    4. *Krok 4: Stany graniczne, tętnienia i zabezpieczenia*
-- **Panel pytania sokratejskiego:**
-  - Pytanie wiodące danego kroku z naukowym formatowaniem wzorów.
-  - Interaktywny przycisk **💡 Potrzebuję naprowadzenia** (wskazówka kierunkowa bez podawania odpowiedzi).
-  - Interaktywny przycisk **🔍 Zweryfikuj swoje myślenie** (sprawdzenie fizycznej hipotezy ucznia).
-  - Pełna adaptacja wizualna do trybu jasnego i ciemnego z zachowaniem standardów kontrastu WCAG AAA.
+  - 4 etapy poznawcze zintegrowane z pytaniem wiodącym, formułami naukowymi i podpowiedziami.
+- **Interaktywne akcje:**
+  - **💡 Potrzebuję naprowadzenia** (kierunkowa wskazówka sokratejska bez podawania odpowiedzi).
+  - **🔍 Zweryfikuj swoje myślenie** (walidacja hipotezy ucznia).
 - **Dedykowany czatbot sokratejski (`SocraticChatPanel`):**
-  - Wybór modeli Google Gemini: `⚡ Flash-Lite` (`gemini-3.5-flash-lite`), `⚖️ Flash` (`gemini-3.8-flash`), `🧠 Argon` (`gemini-4-argon`).
+  - Obsługa modeli Google Gemini: `⚡ Flash-Lite` (`gemini-3.5-flash-lite`), `⚖️ Flash` (`gemini-3.8-flash`), `🧠 Argon` (`gemini-4-argon`).
   - Przełącznik głębokiego toku myślenia (*Thinking Mode*).
-  - Automatyczna kaskada bezpieczeństwa (*Safety Cascade Fallback*).
-  - Matematyczny parser wyrażeń fizycznych i indeksów LaTeX (`SymbolParser`).
-  - Szybkie akcje sokratejskie (*„Dlaczego tak zrobiliśmy?”*, *„Wskazówka”*, *„Wyjaśnij prościej”*, *„Podsumujmy”*).
-  - Obsługa klawiatury: `Enter` wysyła wiadomość, `Shift + Enter` tworzy nową linię.
-  - Dwuetapowa synchronizacja stanu sesji z panelem głównym aplikacji.
+  - Bezpieczeństwo kaskadowe (*Safety Cascade Fallback*).
+  - Parser symboli fizycznych i indeksów LaTeX (`SymbolParser`).
 
 #### B. Prawy Panel – Silnik Wektorowy Schematów (`SvgSchematicViewer`):
-- **Sterowanie widokiem i manipulacja przestrzenna:**
-  - Narzędzie **Dopasuj (Zoom-to-Fit):** automatyczne wyśrodkowanie i optymalne wyskalowanie schematu do rozmiaru widoku.
-  - Skalowanie kółkiem myszy (**Wheel-Zoom**) z izolacją przewijania – obrót kółkiem myszy skaluje wyłącznie schemat, bez przesuwania sąsiednich paneli.
-  - Ręczne przesuwanie schematu (**Pan / Drag**) z wizualnym wskaźnikiem kursora (`cursor-grab` / `cursor-grabbing`).
-  - Przyciski powiększania (`+`), pomniejszania (`-`) oraz przełączania obwodów (`<`, `>`).
-  - Usunięcie zdublowanych kontrolek widoku dla maksymalnej przejrzystości interfejsu.
+- **Interakcja przestrzenna:**
+  - Narzędzie **Dopasuj (Zoom-to-Fit)** do automatycznego kadrowania schematu.
+  - Płynne skalowanie kółkiem myszy (**Wheel-Zoom**) z izolacją przewijania.
+  - Przesuwanie widoku (**Pan / Drag**) z wizualnym wskaźnikiem kursora.
 - **Warstwa Adnotacji i Znaczników (`SchematicAnnotationsLayer`):**
-  - Możliwość tworzenia tymczasowych znaczników i notatek bezpośrednio na elementach obwodu.
-  - Automatyczna rotacja palety kolorów wyróżnień, edycja i usuwanie adnotacji.
-  - Zapis i odtwarzanie znaczników w ramach eksportu/importu sesji JSON.
-- **Punkty kluczowe (Hotspots) i karty „Show-Up” (`SymbolShowUpPopover`):**
-  - Wyjaśnienie roli fizycznej komponentu, ścisły wzór projektowy oraz typowe wartości rzeczywiste (np. 1N4007, BC547, 470µF).
-  - Ukrycie suwaków przewijania (`no-scrollbar`) dla estetyki i czystości widoku.
+  - Rysowanie tymczasowych znaczników, notatek i punktów pomiarowych na schemacie z automatyczną rotacją barw.
+- **Karty informacyjne komponentów (`SymbolShowUpPopover`):**
+  - Karty z rolą fizyczną, wzorem matematycznym i typowymi parametrami rzeczywistymi.
 
 ---
 
-### 3. Wzorcowe Schematy Elektroniczne (SSOT):
-Wszystkie schematy zdefiniowane są w jednolitym katalogu `/public/resources/`:
-1. `half-wave-rectifier.json` – Prostownik jednopołówkowy z filtrem pojemnościowym ($U_{in}, D_1, C_{filtr}, R_L$).
-2. `npn-common-emitter.json` – Wzmacniacz tranzystorowy we wspólnym emiterze OE ($U_{CC}, Q_1, R_{b1}, R_{b2}, R_c, R_e, C_e, C_{in}, C_{out}$).
-3. `zener-regulator.json` – Równoległy stabilizator parametryczny z diodą Zenera ($U_{in}, R_s, D_z, R_L$).
-
----
-
-### 4. Backend i Bezpieczeństwo Gemini API (`server.ts`):
-- Serwer full-stack w oparciu o Express i oficjalne SDK `@google/genai` (wersja 2.4.0) na porcie 3000 (`tsx server.ts`).
-- Dedykowany endpoint `POST /api/chat` przesyłający kontekst obwodu, bieżący etap oraz historię dialogu.
-- **Inżynieria Promptu Mentora:** System prompt wymusza sokratejską metodę nauczania – bezwzględny zakaz podawania gotowych wyników liczbowych, stawianie pytań naprowadzających o zjawiska fizyczne i prawa Kirchhoffa/Ohma.
-- **Safety Cascade:** Automatyczne przełączanie na model zapasowy `gemini-3.5-flash-lite` w przypadku przeciążenia lub niedostępności modeli wyższego rzędu.
-- **Fallback Offline:** W przypadku braku skonfigurowanego klucza API serwer automatycznie serwuje heurystyczne odpowiedzi mentora offline.
+### 5. Backend i Bezpieczeństwo Gemini API (`server.ts`):
+- Serwer full-stack w oparciu o Express i oficjalne SDK `@google/genai` na porcie 3000 (`tsx server.ts`).
+- Dedykowane endpointy REST:
+  - `POST /api/chat` – dialog sokratejski z uwzględnieniem kontekstu schematu i aktualnego etapu.
+  - `POST /api/circuits/analyze-image` – multimodalna synteza schematu z obrazu (PNG/JPG/schowek).
+  - `GET /api/circuits`, `GET /api/circuits/:id`, `POST /api/circuits`, `DELETE /api/circuits/:id` – obsługa bazy Cloud SQL.
+- Zwiększony limit payloadu JSON (`20mb`) dla wydajnego przesyłania obrazów o wysokiej rozdzielczości w Base64.
+- **Prompt Sokratejski Mentora:** rygorystyczny zakaz podawania bezpośrednich wyników, nakaz naprowadzania ucznia pytaniami o prawa fizyki.
 
 ---
 
@@ -100,17 +128,18 @@ Wszystkie schematy zdefiniowane są w jednolitym katalogu `/public/resources/`:
 
 - **Node.js:** `>= 18.0.0` (rekomendowany Node.js 20 LTS lub 22)
 - **NPM:** `>= 9.0.0`
-- **Przeglądarka:** Nowoczesna przeglądarka wspierająca standard ECMAScript 2022 oraz grafikę SVG (Chrome, Firefox, Safari, Edge).
+- **Przeglądarka:** Nowoczesna przeglądarka wspierająca standard ECMAScript 2022, Canvas API oraz grafikę SVG (Chrome, Firefox, Safari, Edge).
 
 ### Zmienne środowiskowe (`.env`):
-Skonfiguruj klucz API w pliku `.env`:
-
 ```env
-# Klucz API dla modeli Gemini (wymagany do działania czatbota sokratejskiego online)
+# Klucz API dla modeli Gemini (wymagany do działania czatbota i multimodalnej analizy obrazu)
 GEMINI_API_KEY="Twój_Klucz_Gemini_API"
 
 # Opcjonalny port serwera (domyślnie 3000)
 PORT=3000
+
+# Parametry połączenia z Google Cloud SQL PostgreSQL (opcjonalne, przy braku następuje fallback in-memory)
+DATABASE_URL="postgres://user:password@localhost:5432/deschema"
 ```
 
 ---
@@ -149,40 +178,46 @@ PORT=3000
 
 ```
 ├── public/
-│   └── resources/                     # Pojedyncze źródło prawdy (SSOT) dla definicji JSON obwodów
+│   └── resources/                     # Wzorcowe definicje JSON obwodów (fallback i seeding)
 │       ├── half-wave-rectifier.json
 │       ├── npn-common-emitter.json
 │       └── zener-regulator.json
 ├── src/
+│   ├── api/                           # Routery Express (circuits.router.ts)
 │   ├── components/                    # Warstwa prezentacji (View)
-│   │   ├── modals/                    # Okna dialogowe (CircuitsManagerModal, AboutModal, CheatSheetModal)
-│   │   ├── navigation/                # Elementy paska nawigacji (SessionDropdown, SettingsDropdown, HelpDrawer)
-│   │   ├── schematic/                 # Komponenty schematu (SchematicControlsBar, SchematicAnnotationsLayer)
-│   │   ├── SocraticChatPanel.tsx      # Panel czatbota z obsługą modeli Gemini i toku myślenia
-│   │   ├── SocraticProgressBar.tsx    # Wskaźnik postępu analizy obwodu
-│   │   ├── SocraticStepSection.tsx    # 4-etapowy kontener pytań sokratejskich
-│   │   ├── SvgSchematicViewer.tsx     # Silnik wektorowy ze skalowaniem, przesuwaniem i adnotacjami
-│   │   ├── SymbolShowUpPopover.tsx    # Karty popover z rolą fizyczną i wzorami
-│   │   ├── TopNavbar.tsx              # Pasek nawigacji łączący Sesję, Układy, Ustawienia i Motyw
-│   │   └── Footer.tsx                 # Stopka z oznaczeniem autora i licencji
-│   ├── context/                       # Zarządzanie stanem globalnym (ThemeContext, SettingsContext)
-│   ├── data/                          # Metadane wbudowanych obwodów
-│   ├── interfaces/                    # Kontrakty i abstrakcje (ICircuitRepository, IStorageService, ISessionService)
-│   ├── services/                      # Serwisy domenowe i infrastrukturalne
-│   │   ├── circuit-repository.ts      # Repozytorium obwodów (pobieranie HTTP + storage)
-│   │   ├── circuit-validator.ts       # Walidator schematów obwodów
-│   │   ├── local-storage-storage.service.ts # Adapter pamięci lokalnej z fallbackiem in-memory
-│   │   └── session.service.ts         # Eksport, import i historia sesji
+│   │   ├── auth/                      # Komponenty logowania i profilu użytkownika
+│   │   ├── modals/                    # Okna dialogowe
+│   │   │   ├── schematic-wizard/      # Kreator: SchematicUploadStage, SchematicEditorStage
+│   │   │   ├── CircuitsManagerModal.tsx # Panel Układy z akcją "Wgraj Schemat"
+│   │   │   ├── SchematicAiWizardModal.tsx # Główny modal wgrywania schematów
+│   │   │   ├── CreateCircuitModal.tsx # Ręczny edytor obwodów
+│   │   │   ├── AboutModal.tsx
+│   │   │   └── CheatsheetModal.tsx
+│   │   ├── navigation/                # SessionDropdown, SettingsDropdown, HelpDrawer, UserAuthButton
+│   │   ├── schematic/                 # SchematicControlsBar, SchematicAnnotationsLayer
+│   │   ├── SocraticChatPanel.tsx      # Panel czatbota sokratejskiego
+│   │   ├── SocraticProgressBar.tsx    # Wskaźnik postępu
+│   │   ├── SocraticStepSection.tsx    # 4 kroki sokratejskie
+│   │   ├── SvgSchematicViewer.tsx     # Silnik wektorowy schematów
+│   │   ├── SymbolShowUpPopover.tsx    # Karty popover z fizycznymi wzorami
+│   │   ├── TopNavbar.tsx              # Pasek nawigacji łączący Sesję, Układy, Wgraj Schemat i Profil
+│   │   └── Footer.tsx                 # Stopka autorska
+│   ├── context/                       # Zarządzanie stanem (ThemeContext, SettingsContext, AuthContext)
+│   ├── db/                            # Warstwa bazodanowa Cloud SQL (schema.ts, client.ts, circuits.ts)
+│   ├── interfaces/                    # Abstrakcje (ICircuitRepository, ICircuitAnalyzerService, IStorageService)
+│   ├── middleware/                    # Middleware autoryzacji (auth.ts)
+│   ├── services/                      # Logika domenowa i serwisy
+│   │   ├── circuit-analyzer.service.ts        # Synteza schematów z obrazu przez Gemini API
+│   │   ├── circuit-analyzer-client.service.ts # Klient HTTP dla kreatora schematów
+│   │   ├── circuit-repository.ts              # Hybrydowe repozytorium Cloud SQL + local fallback
+│   │   ├── circuit-validator.ts               # Walidator struktury obwodu
+│   │   └── session.service.ts                 # Trwałość sesji użytkownika
 │   ├── types/                         # Ścisłe definicje typów TypeScript
-│   │   ├── circuit.types.ts           # Typy obwodu, symboli i kroków sokratejskich
-│   │   ├── session.types.ts           # Typy sesji, wiadomości i danych zapisu
-│   │   └── annotation.types.ts        # Typy znaczników i adnotacji schematu
-│   └── utils/                         # Narzędzia typograficzne i naukowe
-│       └── symbol-parser.ts           # Parser indeksów dolnych/górnych, symboli LaTeX i formuł fizycznych
+│   └── utils/                         # Narzędzia typograficzne (SymbolParser)
 ├── docs/
-│   └── changes/                       # Dokumentacja architektoniczna i raporty zmian
-├── server.ts                          # Serwer Express obsługujący proxy Gemini API i kaskadę modeli
-├── LICENSE                            # Jednolity, kanoniczny plik licencji MIT
+│   └── changes/                       # Raporty zmian i audyty architektoniczne
+├── server.ts                          # Serwer Express obsługujący proxy Gemini i bazę Cloud SQL
+├── LICENSE                            # Licencja MIT
 └── README.md                          # Dokumentacja projektu
 ```
 

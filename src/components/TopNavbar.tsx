@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Cpu, HelpCircle, Info, Sun, Moon, Menu, X, CircuitBoard, Sparkles } from 'lucide-react';
+import { Cpu, HelpCircle, Info, Sun, Moon, Menu, X, CircuitBoard, Sparkles, Upload } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext.tsx';
 import { SessionDropdown } from './navigation/SessionDropdown.tsx';
 import { SettingsDropdown } from './navigation/SettingsDropdown.tsx';
@@ -89,10 +89,10 @@ export const TopNavbar: React.FC<Props> = ({
             <button
               onClick={() => setIsAiWizardOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-xl transition cursor-pointer font-medium"
-              title="Skanuj schemat ze zdjęcia lub wklej ze schowka (Ctrl+V)"
+              title="Wgraj schemat z pliku graficznego (PNG/JPG) lub wklej ze schowka (Ctrl+V)"
             >
-              <Sparkles className="w-4 h-4 text-emerald-400" />
-              <span>Skanuj schemat (AI)</span>
+              <Upload className="w-4 h-4 text-emerald-400" />
+              <span>Wgraj Schemat</span>
             </button>
 
             <SettingsDropdown />
@@ -176,8 +176,8 @@ export const TopNavbar: React.FC<Props> = ({
               }}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-emerald-400 hover:bg-slate-900 rounded-xl font-medium"
             >
-              <Sparkles className="w-4 h-4 text-emerald-400" />
-              <span>Skanuj schemat (AI)</span>
+              <Upload className="w-4 h-4 text-emerald-400" />
+              <span>Wgraj Schemat</span>
             </button>
 
             <div className="py-1">
