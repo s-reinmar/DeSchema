@@ -14,8 +14,36 @@ import {
   insertCircuitToDb,
   deleteCircuitFromDb,
 } from '../db/circuits.ts';
+import { CircuitAnalyzerService } from '../services/circuit-analyzer.service.ts';
 
 export const circuitsRouter = Router();
+const circuitAnalyzer = new CircuitAnalyzerService();
+
+/**
+ * POST /api/circuits/analyze-image
+ * Analyzes an uploaded schematic image or clipboard screenshot and synthesizes SVG and 4 Socratic questions.
+ */
+circuitsRouter.post('/analyze-image', optionalAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { imageBase64, mimeType, pedagogicalFocus } = req.body || {};
+    if (!imageBase64 || typeof imageBase64 !== 'string' || imageBase64.trim() === '') {
+      res.status(400).json({ error: 'Wymagane jest przesłanie obrazu schematu w formacie base64.' });
+      return;
+    }
+
+    const result = await circuitAnalyzer.analyzeSchematicImage({
+      imageBase64,
+      mimeType,
+      pedagogicalFocus,
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('[API Circuits] Błąd analizy obrazu schematu:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd podczas analizy schematu.';
+    res.status(500).json({ error: errorMessage });
+  }
+});
 
 /**
  * GET /api/circuits

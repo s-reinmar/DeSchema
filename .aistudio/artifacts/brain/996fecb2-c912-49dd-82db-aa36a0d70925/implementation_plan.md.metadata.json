@@ -1,6 +1,6 @@
 {
-  "summary": "Plan implementacji relacyjnej bazy danych Cloud SQL (PostgreSQL) oraz uwierzytelniania użytkowników (Firebase Auth) dla platformy DeSchema Mentor.\nPlan obejmuje znormalizowany model bazy danych z tabelami obwodów, symboli i kroków sokratejskich, katalog publiczny oraz prywatne kolekcje użytkowników.",
-  "updatedAt": "2026-10-19T08:25:28.986497117Z",
+  "summary": "Plan implementacji generatora układów elektronicznych ze zdjęć i schematów: multimodalna analiza Gemini, automatyczne tworzenie wektorów SVG ze znacznikami punktów kontrolnych, 4 pytań sokratejskich oraz interaktywny kreator z edycją i zapisem do bazy Cloud SQL.",
+  "updatedAt": "2026-10-19T08:55:22.022592039Z",
   "requestFeedback": true,
   "userFacing": true
 }

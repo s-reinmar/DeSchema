@@ -22,6 +22,7 @@ import type { Circuit, CircuitSummary } from '../../types/circuit.types.ts';
 import { SymbolParser } from '../../utils/symbol-parser.ts';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { CreateCircuitModal } from './CreateCircuitModal.tsx';
+import { SchematicAiWizardModal } from './SchematicAiWizardModal.tsx';
 
 interface Props {
   readonly isOpen: boolean;
@@ -45,6 +46,7 @@ export const CircuitsManagerModal: React.FC<Props> = ({
   const { user, signInWithGoogle } = useAuth();
   const [activeTab, setActiveTab] = useState<'public' | 'private'>('public');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAiWizardOpen, setIsAiWizardOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -141,15 +143,26 @@ export const CircuitsManagerModal: React.FC<Props> = ({
               </button>
             </div>
 
-            {user && onSaveCustomCircuit && (
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl transition cursor-pointer shadow-sm"
+                onClick={() => setIsAiWizardOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded-xl transition cursor-pointer"
+                title="Generuj nowy układ z analizy obrazu lub wklejonego schematu"
               >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span>Dodaj obwód</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Generuj z obrazu (AI)</span>
               </button>
-            )}
+
+              {user && onSaveCustomCircuit && (
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl transition cursor-pointer shadow-sm"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Ręczny edytor</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Scrollable list */}
@@ -282,11 +295,21 @@ export const CircuitsManagerModal: React.FC<Props> = ({
       </div>
 
       {onSaveCustomCircuit && (
-        <CreateCircuitModal
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          onSaveCircuit={onSaveCustomCircuit}
-        />
+        <>
+          <CreateCircuitModal
+            isOpen={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            onSaveCircuit={onSaveCustomCircuit}
+          />
+          <SchematicAiWizardModal
+            isOpen={isAiWizardOpen}
+            onClose={() => setIsAiWizardOpen(false)}
+            onSaveCircuit={async (circuit) => {
+              await onSaveCustomCircuit(circuit);
+              onSelectCircuit(circuit.id);
+            }}
+          />
+        </>
       )}
     </>
   );

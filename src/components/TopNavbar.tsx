@@ -6,13 +6,14 @@
  */
 
 import React, { useState } from 'react';
-import { Cpu, HelpCircle, Info, Sun, Moon, Menu, X, CircuitBoard } from 'lucide-react';
+import { Cpu, HelpCircle, Info, Sun, Moon, Menu, X, CircuitBoard, Sparkles } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext.tsx';
 import { SessionDropdown } from './navigation/SessionDropdown.tsx';
 import { SettingsDropdown } from './navigation/SettingsDropdown.tsx';
 import { HelpDrawer } from './navigation/HelpDrawer.tsx';
 import { UserAuthButton } from './navigation/UserAuthButton.tsx';
 import { CircuitsManagerModal } from './modals/CircuitsManagerModal.tsx';
+import { SchematicAiWizardModal } from './modals/SchematicAiWizardModal.tsx';
 import { AboutModal } from './modals/AboutModal.tsx';
 import { CheatsheetModal } from './modals/CheatsheetModal.tsx';
 import type { Circuit, CircuitSummary } from '../types/circuit.types.ts';
@@ -39,6 +40,7 @@ export const TopNavbar: React.FC<Props> = ({
 }) => {
   const { theme, toggleTheme } = useTheme();
   const [isCircuitsModalOpen, setIsCircuitsModalOpen] = useState(false);
+  const [isAiWizardOpen, setIsAiWizardOpen] = useState(false);
   const [isHelpDrawerOpen, setIsHelpDrawerOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isCheatsheetModalOpen, setIsCheatsheetModalOpen] = useState(false);
@@ -82,6 +84,15 @@ export const TopNavbar: React.FC<Props> = ({
             >
               <CircuitBoard className="w-4 h-4 text-cyan-400" />
               <span>Układy</span>
+            </button>
+
+            <button
+              onClick={() => setIsAiWizardOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-xl transition cursor-pointer font-medium"
+              title="Skanuj schemat ze zdjęcia lub wklej ze schowka (Ctrl+V)"
+            >
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span>Skanuj schemat (AI)</span>
             </button>
 
             <SettingsDropdown />
@@ -158,6 +169,17 @@ export const TopNavbar: React.FC<Props> = ({
               <span>Baza Układów Cloud SQL</span>
             </button>
 
+            <button
+              onClick={() => {
+                setIsAiWizardOpen(true);
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-emerald-400 hover:bg-slate-900 rounded-xl font-medium"
+            >
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span>Skanuj schemat (AI)</span>
+            </button>
+
             <div className="py-1">
               <SettingsDropdown />
             </div>
@@ -216,6 +238,18 @@ export const TopNavbar: React.FC<Props> = ({
         isOpen={isCheatsheetModalOpen}
         onClose={() => setIsCheatsheetModalOpen(false)}
       />
+
+      {/* Modal Kreatora Schematu AI */}
+      {onSaveCustomCircuit && (
+        <SchematicAiWizardModal
+          isOpen={isAiWizardOpen}
+          onClose={() => setIsAiWizardOpen(false)}
+          onSaveCircuit={async (circuit) => {
+            await onSaveCustomCircuit(circuit);
+            onSelectCircuit(circuit.id);
+          }}
+        />
+      )}
     </>
   );
 };
