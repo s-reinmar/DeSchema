@@ -8,7 +8,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   MessageSquare,
-  Cpu,
   BrainCircuit,
   RotateCcw,
   Send,
@@ -39,7 +38,7 @@ export interface ChatMessage {
 }
 
 export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => {
-  const { settings, setAiModel, setDeepThinking, registerPromptListener } = useSettings();
+  const { settings, registerPromptListener } = useSettings();
   const selectedModel = settings.aiModel;
   const thinkingEnabled = settings.deepThinking;
 
@@ -64,10 +63,6 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
-
-  const handleModelSelect = (model: AvailableModel) => {
-    setAiModel(model);
-  };
 
   const executeSend = async (textToSend: string) => {
     const trimmed = textToSend.trim();
@@ -176,8 +171,8 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
 
   return (
     <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col backdrop-blur-sm">
-      {/* 1. Nagłówek czatu z selektorem modelu i przełącznikiem myślenia */}
-      <div className="p-3.5 sm:p-4 bg-slate-950/80 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+      {/* 1. Nagłówek czatu */}
+      <div className="p-3.5 sm:p-4 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="p-2 bg-gradient-to-tr from-cyan-600 to-indigo-600 rounded-xl shadow-md text-white">
             <MessageSquare className="w-4 h-4" />
@@ -193,43 +188,16 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
           </div>
         </div>
 
-        {/* Model Selector & Thinking Switch */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <select
-              value={selectedModel}
-              onChange={(e) => handleModelSelect(e.target.value as AvailableModel)}
-              className="pl-2.5 pr-7 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none cursor-pointer"
-              title="Wybierz silnik Gemini"
-            >
-              <option value="gemini-3.5-flash-lite">⚡ Flash-Lite (Token-Safe)</option>
-              <option value="gemini-3.8-flash">⚖️ Flash (Zbalansowany)</option>
-              <option value="gemini-4-argon">🧠 Argon (Myślenie &amp; STEM)</option>
-            </select>
-            <Cpu className="pointer-events-none absolute right-2 top-2.5 w-3 h-3 text-slate-500" />
-          </div>
-
-          <label
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 cursor-pointer hover:border-slate-700 transition"
-            title="Przełącznik trybu myślenia (Thinking Level HIGH dla Argon)"
-          >
-            <input
-              type="checkbox"
-              checked={thinkingEnabled}
-              onChange={(e) => setDeepThinking(e.target.checked)}
-              className="w-3.5 h-3.5 rounded text-indigo-500 bg-slate-950 border-slate-700 focus:ring-0"
-            />
-            <BrainCircuit className={`w-3.5 h-3.5 ${thinkingEnabled ? 'text-indigo-400 animate-pulse' : 'text-slate-500'}`} />
-            <span className="text-[11px] font-semibold hidden sm:inline">Myślenie</span>
-          </label>
-
+        {/* Akcje czatu: czyszczenie dialogu */}
+        <div className="flex items-center gap-2">
           <button
             onClick={handleResetChat}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition border border-slate-800/80 hover:border-slate-700"
             title="Wyczyść dialog"
             aria-label="Wyczyść dialog"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-medium hidden sm:inline">Wyczyść</span>
           </button>
         </div>
       </div>
