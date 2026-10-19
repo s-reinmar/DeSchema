@@ -1,6 +1,6 @@
 {
-  "summary": "Plan ujednolicenia architektury zasobów obwodów w DeSchema Mentor: likwidacja duplikacji katalogów, ustanowienie public/resources jako Single Source of Truth (SSOT) oraz aktualizacja CircuitRepository i predefined-circuits.",
-  "updatedAt": "2026-10-19T05:25:13.547110249Z",
+  "summary": "Plan ujednolicenia prezentacji symboli fizycznych i usunięcia artefaktów LaTeX we wszystkich modułach aplikacji DeSchema Mentor:\n- Rozbudowa uniwersalnego parsera symboli i formuł (formatSchematicLabel) z obsługą ułamków, indeksów, greki i czyszczeniem znaczników &, _, $.\n- Wdrożenie dynamicznego procesora etykiet wektorowych SVG zamieniającego indeksy na natywne elementy <tspan> oraz Unicode.\n- Ujednolicenie formatowania w czacie sokratejskim, krokach analizy (prompt, hint, reflection) oraz kartach Show-Up i ściągawkach.\n- Zapewnienie pełnej zgodności z zasadami SOLID, czystej architektury i rygorystycznego typowania TypeScript.",
+  "updatedAt": "2026-10-19T05:44:56.169377320Z",
   "requestFeedback": true,
   "userFacing": true
 }

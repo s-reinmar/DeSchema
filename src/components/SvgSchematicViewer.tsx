@@ -19,7 +19,7 @@ import {
   Info,
 } from 'lucide-react';
 import type { Circuit, CircuitSummary, CircuitSymbol } from '../types/circuit.types.ts';
-import { formatSchematicLabel } from '../utils/label-formatter.tsx';
+import { formatSchematicLabel, sanitizeSvgTextLabels } from '../utils/label-formatter.tsx';
 import { SymbolShowUpPopover } from './SymbolShowUpPopover.tsx';
 
 interface Props {
@@ -222,7 +222,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
           <svg
             viewBox={circuit.svgViewBox}
             className="w-full h-full text-slate-300 drop-shadow-lg select-none"
-            dangerouslySetInnerHTML={{ __html: circuit.svgContent }}
+            dangerouslySetInnerHTML={{ __html: sanitizeSvgTextLabels(circuit.svgContent) }}
           />
 
           {/* 2 & 3. Interactive Symbol Hotspots with <sub> / <sup> and Show-Up Popover */}

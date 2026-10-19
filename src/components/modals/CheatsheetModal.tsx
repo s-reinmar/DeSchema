@@ -111,7 +111,7 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-white text-sm">I Prawo Kirchhoffa (Prądowe - KCL)</span>
                 <span className="font-mono text-xs px-2.5 py-1 bg-slate-950 rounded-lg text-indigo-300 border border-slate-800">
-                  ∑ I_węzeł = 0
+                  {formatSchematicLabel('∑ I_{węzeł} = 0')}
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed">
@@ -128,7 +128,7 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-white text-sm">II Prawo Kirchhoffa (Napięciowe - KVL)</span>
                 <span className="font-mono text-xs px-2.5 py-1 bg-slate-950 rounded-lg text-indigo-300 border border-slate-800">
-                  ∑ U_oczko = 0
+                  {formatSchematicLabel('∑ U_{oczko} = 0')}
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed">
@@ -148,7 +148,7 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-white text-sm">Dioda Prostownicza Krzemowa (Złącze P-N)</span>
                 <span className="font-mono text-xs px-2.5 py-1 bg-slate-950 rounded-lg text-cyan-300 border border-slate-800">
-                  U_D ≈ 0.65 - 0.7V
+                  {formatSchematicLabel('U_D ≈ 0.65 - 0.7V')}
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed">
@@ -168,7 +168,7 @@ export const CheatsheetModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-white text-sm">Dioda Zenera (Stabilizacja Napięcia)</span>
                 <span className="font-mono text-xs px-2.5 py-1 bg-slate-950 rounded-lg text-emerald-300 border border-slate-800">
-                  U_wy = U_z = const
+                  {formatSchematicLabel('U_{wy} = U_z = const')}
                 </span>
               </div>
               <p className="text-slate-300 leading-relaxed">

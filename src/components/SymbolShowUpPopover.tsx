@@ -8,7 +8,7 @@
 import React from 'react';
 import { X, Zap, Cpu, FunctionSquare, Info, Pin, Sparkles, CheckCircle2 } from 'lucide-react';
 import type { CircuitSymbol } from '../types/circuit.types.ts';
-import { formatSchematicLabel } from '../utils/label-formatter.tsx';
+import { formatSchematicLabel, formatFormulaHtml, formatRichScientificText } from '../utils/label-formatter.tsx';
 
 interface Props {
   readonly symbol: CircuitSymbol | null;
@@ -79,7 +79,7 @@ export const SymbolShowUpPopover: React.FC<Props> = ({
             <Info className="w-3.5 h-3.5 text-indigo-400" />
             <span>Co oznacza ten symbol:</span>
           </div>
-          <p className="text-slate-200">{symbol.explanation}</p>
+          <p className="text-slate-200">{formatRichScientificText(symbol.explanation)}</p>
         </div>
 
         {/* Rola fizyczna */}
@@ -89,7 +89,7 @@ export const SymbolShowUpPopover: React.FC<Props> = ({
               <Zap className="w-3.5 h-3.5 text-emerald-400" />
               <span>Rola fizyczna w obwodzie:</span>
             </div>
-            <p className="text-slate-200">{symbol.physicalRole}</p>
+            <p className="text-slate-200">{formatRichScientificText(symbol.physicalRole)}</p>
           </div>
         )}
 
@@ -101,11 +101,11 @@ export const SymbolShowUpPopover: React.FC<Props> = ({
               <span>Wzór doboru wartości:</span>
             </div>
             <div className="p-2 rounded-lg bg-slate-950/90 font-mono text-xs text-amber-300 border border-slate-800 tracking-wide overflow-x-auto">
-              {formatSchematicLabel(symbol.formula)}
+              {formatFormulaHtml(symbol.formula)}
             </div>
             {symbol.formulaDescription && (
               <p className="mt-1.5 text-[11px] text-slate-400">
-                {symbol.formulaDescription}
+                {formatRichScientificText(symbol.formulaDescription)}
               </p>
             )}
           </div>

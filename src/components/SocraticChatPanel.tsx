@@ -21,7 +21,7 @@ import {
   FileCheck2,
 } from 'lucide-react';
 import type { Circuit, SocraticStep } from '../types/circuit.types.ts';
-import { formatSchematicLabel } from '../utils/label-formatter.tsx';
+import { formatRichScientificText } from '../utils/label-formatter.tsx';
 
 interface Props {
   readonly circuit?: Circuit;
@@ -392,29 +392,5 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
  * Splits message text into regular strings and formatted mathematical/physical formulas.
  */
 function renderMessageTextWithFormulas(text: string): React.ReactNode {
-  // If text contains LaTeX-like expressions, symbols or subscripts, parse them
-  const lines = text.split('\n');
-  return (
-    <>
-      {lines.map((line, lineIdx) => {
-        // Detect formula chunks or words containing subscripts like R_b1, U_in, V_D, etc.
-        const tokens = line.split(/(\s+|[.,!?:;()]+)/);
-        return (
-          <React.Fragment key={lineIdx}>
-            {tokens.map((token, tokIdx) => {
-              if (/[a-zA-Z]+_[a-zA-Z0-9{}]+|[a-zA-Z]+\^[a-zA-Z0-9{}]+|\\Delta|\\beta|\\pi/.test(token)) {
-                return (
-                  <span key={tokIdx} className="font-mono text-cyan-300">
-                    {formatSchematicLabel(token)}
-                  </span>
-                );
-              }
-              return token;
-            })}
-            {lineIdx < lines.length - 1 && <br />}
-          </React.Fragment>
-        );
-      })}
-    </>
-  );
+  return formatRichScientificText(text);
 }
