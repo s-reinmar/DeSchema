@@ -1,6 +1,6 @@
 {
-  "summary": "Kompleksowy plan refaktoryzacji górnego paska nawigacji (TopMenu / TopNavbar):\n- Ustawienia (Dropdown): wybór modelu AI, Deep Thinking Mode, selektor języka (PL/EN) oraz zablokowany slot sterowania.\n- Pomoc (Drawer z prawej strony): sterowanie i skróty klawiszowe czatu oraz zgrupowana Baza podpowiedzi (Wskazówka, Wyjaśnij prościej, Dlaczego tak zrobiliśmy, Ściągawka praw, Podsumujmy) z bezpośrednim wyzwalaniem promptu w czacie.\n- O programie (Modal): metryka aplikacji, licencja MIT, wersja, autorzy.\n- Wgraj JSON: zintegrowany przycisk z ukrytym inputem, walidacją i bezpiecznym parsowaniem.\n- Czysta architektura TypeScript, separacja odpowiedzialności (SRP/DIP), pełna dostępność ARIA.",
-  "updatedAt": "2026-10-19T06:28:19.056034434Z",
+  "summary": "Plan wdrożenia menu 'Sesja' (eksport/import JSON, historia sesji) oraz panelu 'Układy' (katalog obwodów z zarezerwowanym miejscem), z usunięciem starego wgrywania JSON z paska nawigacji i z paska narzędzi schematu.",
+  "updatedAt": "2026-10-19T07:30:56.803556303Z",
   "requestFeedback": true,
   "userFacing": true
 }

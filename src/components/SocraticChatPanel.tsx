@@ -23,6 +23,8 @@ import type { AvailableAiModel } from '../types/navigation.types.ts';
 interface Props {
   readonly circuit?: Circuit;
   readonly currentStep: SocraticStep;
+  readonly messages?: readonly ChatMessage[];
+  readonly onMessagesChange?: (messages: readonly ChatMessage[]) => void;
 }
 
 export type AvailableModel = AvailableAiModel;
@@ -37,7 +39,12 @@ export interface ChatMessage {
   readonly timestamp: string;
 }
 
-export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => {
+export const SocraticChatPanel: React.FC<Props> = ({
+  circuit,
+  currentStep,
+  messages: externalMessages,
+  onMessagesChange,
+}) => {
   const { settings, registerPromptListener } = useSettings();
   const selectedModel = settings.aiModel;
   const thinkingEnabled = settings.deepThinking;
@@ -46,7 +53,7 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [internalMessages, setInternalMessages] = useState<readonly ChatMessage[]>([
     {
       id: 'welcome-1',
       role: 'mentor',
@@ -55,6 +62,17 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
+  const messages = externalMessages ?? internalMessages;
+
+  const setMessages = (
+    updater:
+      | readonly ChatMessage[]
+      | ((prev: readonly ChatMessage[]) => readonly ChatMessage[])
+  ) => {
+    const next = typeof updater === 'function' ? updater(messages) : updater;
+    setInternalMessages(next);
+    onMessagesChange?.(next);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -161,7 +179,7 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
     setMessages([
       {
         id: `welcome-${Date.now()}`,
-        role: 'mentor',
+        role: 'mentor' as const,
         text: 'Wyczyściłem historię rozmowy. Przedstaw swoje pytanie lub hipotezę dotyczącą analizowanego schematu!',
         modelUsed: selectedModel,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),

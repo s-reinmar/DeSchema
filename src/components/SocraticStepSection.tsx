@@ -15,13 +15,15 @@ import {
 import type { Circuit, SocraticStep } from '../types/circuit.types.ts';
 import { SymbolParser } from '../utils/symbol-parser.ts';
 import { SocraticProgressBar } from './SocraticProgressBar.tsx';
-import { SocraticChatPanel } from './SocraticChatPanel.tsx';
+import { SocraticChatPanel, type ChatMessage } from './SocraticChatPanel.tsx';
 
 interface Props {
   readonly circuit?: Circuit;
   readonly steps: readonly SocraticStep[];
   readonly currentStepNumber: 1 | 2 | 3 | 4;
   readonly onStepChange: (stepNumber: 1 | 2 | 3 | 4) => void;
+  readonly messages?: readonly ChatMessage[];
+  readonly onMessagesChange?: (messages: readonly ChatMessage[]) => void;
 }
 
 export const SocraticStepSection: React.FC<Props> = ({
@@ -29,6 +31,8 @@ export const SocraticStepSection: React.FC<Props> = ({
   steps,
   currentStepNumber,
   onStepChange,
+  messages,
+  onMessagesChange,
 }) => {
   const currentStep = steps.find((s) => s.stepNumber === currentStepNumber) ?? steps[0];
 
@@ -155,7 +159,12 @@ export const SocraticStepSection: React.FC<Props> = ({
       </div>
 
       {/* Dedicated Left Panel Chatbot */}
-      <SocraticChatPanel circuit={circuit} currentStep={currentStep} />
+      <SocraticChatPanel
+        circuit={circuit}
+        currentStep={currentStep}
+        messages={messages}
+        onMessagesChange={onMessagesChange}
+      />
     </div>
   );
 };

@@ -1,45 +1,43 @@
 /**
  * @file TopNavbar.tsx
- * @description Application top navigation bar coordinating Settings, Help Drawer, About modal, and JSON upload.
+ * @description Main top navigation bar uniting Session management, Circuits catalog, Settings, Help Drawer, and About modal.
  * @author @s-reinmar
  * @license MIT
  */
 
 import React, { useState } from 'react';
-import { Cpu, HelpCircle, Info, Sun, Moon, Menu, X } from 'lucide-react';
+import { Cpu, HelpCircle, Info, Sun, Moon, Menu, X, CircuitBoard } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext.tsx';
+import { SessionDropdown } from './navigation/SessionDropdown.tsx';
 import { SettingsDropdown } from './navigation/SettingsDropdown.tsx';
 import { HelpDrawer } from './navigation/HelpDrawer.tsx';
-import { JsonUploadButton } from './navigation/JsonUploadButton.tsx';
+import { CircuitsManagerModal } from './modals/CircuitsManagerModal.tsx';
 import { AboutModal } from './modals/AboutModal.tsx';
 import { CheatsheetModal } from './modals/CheatsheetModal.tsx';
-import type { ICircuitRepository } from '../interfaces/circuit-repository.interface.ts';
+import type { CircuitSummary } from '../types/circuit.types.ts';
+import type { SessionData } from '../types/session.types.ts';
 
 interface Props {
-  readonly repository: ICircuitRepository;
-  readonly onCircuitUploaded: (circuitId: string) => void;
+  readonly summaries: readonly CircuitSummary[];
+  readonly currentCircuitId: string;
+  readonly onSelectCircuit: (id: string) => void;
+  readonly onExportSession: () => SessionData;
+  readonly onRestoreSession: (session: SessionData) => void;
 }
 
-export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) => {
+export const TopNavbar: React.FC<Props> = ({
+  summaries,
+  currentCircuitId,
+  onSelectCircuit,
+  onExportSession,
+  onRestoreSession,
+}) => {
   const { theme, toggleTheme } = useTheme();
+  const [isCircuitsModalOpen, setIsCircuitsModalOpen] = useState(false);
   const [isHelpDrawerOpen, setIsHelpDrawerOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isCheatsheetModalOpen, setIsCheatsheetModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const handleJsonLoaded = (data: unknown) => {
-    const validation = repository.validateCircuit(data);
-    if (!validation.isValid || !validation.circuit) {
-      alert(`Błąd walidacji schematu JSON:\n• ${validation.errors.join('\n• ')}`);
-      return;
-    }
-    repository.saveCustomCircuit(validation.circuit);
-    onCircuitUploaded(validation.circuit.id);
-  };
-
-  const handleJsonError = (errorMsg: string) => {
-    alert(`Nie udało się wczytać pliku: ${errorMsg}`);
-  };
 
   return (
     <>
@@ -67,10 +65,26 @@ export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) =>
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-2 text-sm">
-            {/* 1. Ustawienia (Dropdown) */}
+            {/* 1. Sesja (Przed Ustawieniami) */}
+            <SessionDropdown
+              onExportSession={onExportSession}
+              onRestoreSession={onRestoreSession}
+            />
+
+            {/* 2. Układy (Za Sesją i przed Ustawieniami) */}
+            <button
+              onClick={() => setIsCircuitsModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800/70 rounded-xl transition cursor-pointer"
+              title="Przeglądaj i zarządzaj katalogiem układów"
+            >
+              <CircuitBoard className="w-4 h-4 text-cyan-400" />
+              <span>Układy</span>
+            </button>
+
+            {/* 3. Ustawienia */}
             <SettingsDropdown />
 
-            {/* 2. Pomoc (Boczny Drawer) */}
+            {/* 4. Pomoc (Boczny Drawer) */}
             <button
               onClick={() => setIsHelpDrawerOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800/70 rounded-xl transition cursor-pointer"
@@ -80,7 +94,7 @@ export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) =>
               <span>Pomoc</span>
             </button>
 
-            {/* 3. O programie (Modal) */}
+            {/* 5. O programie (Modal) */}
             <button
               onClick={() => setIsAboutModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 hover:text-white hover:bg-slate-800/70 rounded-xl transition cursor-pointer"
@@ -89,13 +103,6 @@ export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) =>
               <Info className="w-4 h-4 text-cyan-400" />
               <span>O programie</span>
             </button>
-
-            {/* 4. Wgraj JSON */}
-            <JsonUploadButton
-              onJsonLoaded={handleJsonLoaded}
-              onError={handleJsonError}
-              className="ml-2"
-            />
           </nav>
 
           {/* Right Controls */}
@@ -128,6 +135,27 @@ export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) =>
         {isMobileMenuOpen && (
           <div className="lg:hidden border-t border-slate-800 bg-slate-950 px-4 py-3 space-y-2 animate-fade-in">
             <div className="py-1">
+              <SessionDropdown
+                onExportSession={onExportSession}
+                onRestoreSession={(sess) => {
+                  onRestoreSession(sess);
+                  setIsMobileMenuOpen(false);
+                }}
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                setIsCircuitsModalOpen(true);
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-900 rounded-xl"
+            >
+              <CircuitBoard className="w-4 h-4 text-cyan-400" />
+              <span>Katalog Układów</span>
+            </button>
+
+            <div className="py-1">
               <SettingsDropdown />
             </div>
 
@@ -152,20 +180,18 @@ export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) =>
               <Info className="w-4 h-4 text-cyan-400" />
               <span>O programie</span>
             </button>
-
-            <div className="pt-2 border-t border-slate-800/80">
-              <JsonUploadButton
-                onJsonLoaded={(data) => {
-                  handleJsonLoaded(data);
-                  setIsMobileMenuOpen(false);
-                }}
-                onError={handleJsonError}
-                className="w-full justify-center"
-              />
-            </div>
           </div>
         )}
       </header>
+
+      {/* Modal Katalogu Układów */}
+      <CircuitsManagerModal
+        isOpen={isCircuitsModalOpen}
+        onClose={() => setIsCircuitsModalOpen(false)}
+        summaries={summaries}
+        currentCircuitId={currentCircuitId}
+        onSelectCircuit={onSelectCircuit}
+      />
 
       {/* Drawer Pomocy */}
       <HelpDrawer
@@ -180,7 +206,7 @@ export const TopNavbar: React.FC<Props> = ({ repository, onCircuitUploaded }) =>
         onClose={() => setIsAboutModalOpen(false)}
       />
 
-      {/* Modal Ściągawka praw (wyzwalany z HelpDrawer) */}
+      {/* Modal Ściągawka praw */}
       <CheatsheetModal
         isOpen={isCheatsheetModalOpen}
         onClose={() => setIsCheatsheetModalOpen(false)}

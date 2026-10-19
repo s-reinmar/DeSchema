@@ -53,6 +53,7 @@ export interface Circuit {
 export interface CircuitSummary {
   readonly id: string;
   readonly title: string;
+  readonly description?: string;
   readonly isCustom: boolean;
 }
 

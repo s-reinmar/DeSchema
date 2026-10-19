@@ -9,7 +9,6 @@ import React from 'react';
 import {
   ChevronLeft,
   ChevronRight,
-  FolderOpen,
   ZoomIn,
   ZoomOut,
   Maximize2,
@@ -28,7 +27,6 @@ interface Props {
   readonly onSelectCircuit: (id: string) => void;
   readonly onPreviousCircuit: () => void;
   readonly onNextCircuit: () => void;
-  readonly onOpenUploadModal: () => void;
   readonly onZoomIn: () => void;
   readonly onZoomOut: () => void;
   readonly onZoomToFit: () => void;
@@ -44,7 +42,6 @@ export const SchematicControlsBar: React.FC<Props> = ({
   onSelectCircuit,
   onPreviousCircuit,
   onNextCircuit,
-  onOpenUploadModal,
   onZoomIn,
   onZoomOut,
   onZoomToFit,
@@ -168,16 +165,6 @@ export const SchematicControlsBar: React.FC<Props> = ({
             <span className="hidden sm:inline">Dopasuj</span>
           </button>
         </div>
-
-        {/* Upload Button */}
-        <button
-          onClick={onOpenUploadModal}
-          className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600/90 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 transition shrink-0 cursor-pointer"
-          title="Otwórz z lokalizacji / Wgraj układ z dysku"
-        >
-          <FolderOpen className="w-4 h-4" />
-          <span className="hidden sm:inline">Wgraj układ</span>
-        </button>
       </div>
     </div>
   );

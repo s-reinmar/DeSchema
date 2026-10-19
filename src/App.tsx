@@ -1,6 +1,7 @@
 /**
  * @file App.tsx
- * @description Main application entry point uniting dual-panel Socratic Mentor (left) and SvgSchematicViewer (right).
+ * @description Main application entry point uniting TopNavbar (Session, Circuits, Settings, Help),
+ * dual-panel Socratic Mentor (left), and interactive SvgSchematicViewer (right).
  * @author @s-reinmar
  * @license MIT
  */
@@ -15,8 +16,18 @@ import { TopNavbar } from './components/TopNavbar.tsx';
 import { SvgSchematicViewer } from './components/SvgSchematicViewer.tsx';
 import { SocraticStepSection } from './components/SocraticStepSection.tsx';
 import { Footer } from './components/Footer.tsx';
-import { UploadModal } from './components/modals/UploadModal.tsx';
 import type { Circuit } from './types/circuit.types.ts';
+import type { SessionData } from './types/session.types.ts';
+import type { ChatMessage } from './components/SocraticChatPanel.tsx';
+import type { SchematicAnnotation } from './types/annotation.types.ts';
+
+const INITIAL_MENTOR_MESSAGE: ChatMessage = {
+  id: 'welcome-1',
+  role: 'mentor',
+  text: 'Witaj! Jestem Twoim cierpliwym mentorem DeSchema. Nie podam Ci gotowych wyników liczbowych, lecz pomogę Ci samodzielnie prześledzić drogę ładunków, potencjałów i zjawisk w obwodzie. Jaka jest Twoja hipoteza do obecnego kroku?',
+  modelUsed: 'gemini-3.5-flash-lite',
+  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+};
 
 export default function App() {
   const storageService = useMemo(() => new LocalStorageService(), []);
@@ -25,8 +36,11 @@ export default function App() {
   const [circuits, setCircuits] = useState<readonly Circuit[]>(() => repository.getAll());
   const [currentCircuitId, setCurrentCircuitId] = useState<string>('half-wave-rectifier');
   const [currentStepNumber, setCurrentStepNumber] = useState<1 | 2 | 3 | 4>(1);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Full session state shared between navbar export/import and workspace panels
+  const [messages, setMessages] = useState<readonly ChatMessage[]>([INITIAL_MENTOR_MESSAGE]);
+  const [annotations, setAnnotations] = useState<readonly SchematicAnnotation[]>([]);
 
   useEffect(() => {
     repository.initialize().then(() => {
@@ -85,10 +99,46 @@ export default function App() {
     setCurrentStepNumber(1);
   };
 
-  const handleCircuitUploaded = (newId: string) => {
-    setCircuits(repository.getAll());
-    setCurrentCircuitId(newId);
-    setCurrentStepNumber(1);
+  const handleExportSession = (): SessionData => {
+    return {
+      version: '1.0.0',
+      sessionTitle: `Sesja - ${currentCircuit?.title ?? currentCircuitId}`,
+      circuitId: currentCircuitId,
+      circuitTitle: currentCircuit?.title ?? currentCircuitId,
+      stepNumber: currentStepNumber,
+      messages: messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        text: m.text,
+        modelUsed: m.modelUsed,
+        timestamp: m.timestamp,
+      })),
+      annotations,
+      savedAt: new Date().toLocaleString(),
+    };
+  };
+
+  const handleRestoreSession = (session: SessionData) => {
+    if (session.circuitId && repository.getById(session.circuitId)) {
+      setCurrentCircuitId(session.circuitId);
+    }
+    if (session.stepNumber && session.stepNumber >= 1 && session.stepNumber <= 4) {
+      setCurrentStepNumber(session.stepNumber);
+    }
+    if (session.messages && Array.isArray(session.messages)) {
+      setMessages(
+        session.messages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          text: m.text,
+          modelUsed: m.modelUsed,
+          timestamp: m.timestamp,
+        }))
+      );
+    }
+    if (session.annotations && Array.isArray(session.annotations)) {
+      setAnnotations(session.annotations);
+    }
   };
 
   if (!isLoaded && !currentCircuit) {
@@ -104,7 +154,9 @@ export default function App() {
     );
   }
 
-  const currentStep = currentCircuit?.socraticSteps?.find((s) => s.stepNumber === currentStepNumber) ?? currentCircuit?.socraticSteps?.[0];
+  const currentStep =
+    currentCircuit?.socraticSteps?.find((s) => s.stepNumber === currentStepNumber) ??
+    currentCircuit?.socraticSteps?.[0];
   const activeTargetSymbolIds = currentStep?.targetSymbolIds ?? [];
 
   return (
@@ -112,8 +164,11 @@ export default function App() {
       <SettingsProvider>
         <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950">
           <TopNavbar
-            repository={repository}
-            onCircuitUploaded={handleCircuitUploaded}
+            summaries={summaries}
+            currentCircuitId={currentCircuitId}
+            onSelectCircuit={handleSelectCircuit}
+            onExportSession={handleExportSession}
+            onRestoreSession={handleRestoreSession}
           />
 
           {/* Dual Panel Workspace Layout */}
@@ -129,6 +184,8 @@ export default function App() {
                   steps={currentCircuit.socraticSteps}
                   currentStepNumber={currentStepNumber}
                   onStepChange={setCurrentStepNumber}
+                  messages={messages}
+                  onMessagesChange={setMessages}
                 />
               </section>
 
@@ -141,23 +198,17 @@ export default function App() {
                   circuit={currentCircuit}
                   summaries={summaries}
                   activeTargetSymbolIds={activeTargetSymbolIds}
+                  annotations={annotations}
+                  onAnnotationsChange={setAnnotations}
                   onSelectCircuit={handleSelectCircuit}
                   onPreviousCircuit={handlePreviousCircuit}
                   onNextCircuit={handleNextCircuit}
-                  onOpenUploadModal={() => setIsUploadModalOpen(true)}
                 />
               </section>
             </div>
           </main>
 
           <Footer />
-
-          <UploadModal
-            isOpen={isUploadModalOpen}
-            onClose={() => setIsUploadModalOpen(false)}
-            repository={repository}
-            onCircuitUploaded={handleCircuitUploaded}
-          />
         </div>
       </SettingsProvider>
     </ThemeProvider>

@@ -47,17 +47,20 @@ export class CircuitRepository implements ICircuitRepository {
         ? Array.from(this.predefinedMap.values()).map((c) => ({
             id: c.id,
             title: c.title,
+            description: c.description,
             isCustom: false,
           }))
         : PREDEFINED_CIRCUITS_META.map((meta) => ({
             id: meta.id,
             title: meta.title,
+            description: undefined,
             isCustom: false,
           }));
 
     const customSummaries = Array.from(this.customMap.values()).map((c) => ({
       id: c.id,
       title: c.title,
+      description: c.description,
       isCustom: true,
     }));
 

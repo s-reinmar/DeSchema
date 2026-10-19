@@ -19,10 +19,11 @@ interface Props {
   readonly circuit: Circuit;
   readonly summaries: readonly CircuitSummary[];
   readonly activeTargetSymbolIds: readonly string[];
+  readonly annotations?: readonly SchematicAnnotation[];
+  readonly onAnnotationsChange?: (annotations: readonly SchematicAnnotation[]) => void;
   readonly onSelectCircuit: (id: string) => void;
   readonly onPreviousCircuit: () => void;
   readonly onNextCircuit: () => void;
-  readonly onOpenUploadModal: () => void;
 }
 
 const ANNOTATION_COLORS = [
@@ -36,15 +37,27 @@ export const SvgSchematicViewer: React.FC<Props> = ({
   circuit,
   summaries,
   activeTargetSymbolIds,
+  annotations: externalAnnotations,
+  onAnnotationsChange,
   onSelectCircuit,
   onPreviousCircuit,
   onNextCircuit,
-  onOpenUploadModal,
 }) => {
   const [activeSymbol, setActiveSymbol] = useState<CircuitSymbol | null>(null);
   const [isPinned, setIsPinned] = useState(false);
   const [isAnnotationMode, setIsAnnotationMode] = useState(false);
-  const [annotations, setAnnotations] = useState<readonly SchematicAnnotation[]>([]);
+  const [internalAnnotations, setInternalAnnotations] = useState<readonly SchematicAnnotation[]>([]);
+  const annotations = externalAnnotations ?? internalAnnotations;
+
+  const setAnnotations = (
+    updater:
+      | readonly SchematicAnnotation[]
+      | ((prev: readonly SchematicAnnotation[]) => readonly SchematicAnnotation[])
+  ) => {
+    const next = typeof updater === 'function' ? updater(annotations) : updater;
+    setInternalAnnotations(next);
+    onAnnotationsChange?.(next);
+  };
   const containerRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -128,7 +141,6 @@ export const SvgSchematicViewer: React.FC<Props> = ({
         }}
         onPreviousCircuit={onPreviousCircuit}
         onNextCircuit={onNextCircuit}
-        onOpenUploadModal={onOpenUploadModal}
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         onZoomToFit={zoomToFit}

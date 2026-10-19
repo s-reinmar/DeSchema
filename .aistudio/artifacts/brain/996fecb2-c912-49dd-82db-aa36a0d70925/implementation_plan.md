@@ -1,54 +1,49 @@
-# Plan Implementacji: Refaktoryzacja i Uporządkowanie Paska Nawigacji (TopMenu)
+# Plan Implementacji: Moduł Sesja, Panel Zarządzania Układami oraz Usunięcie Nadmiarowego Wgrywania JSON
 
-Kompleksowa przebudowa komponentu nawigacyjnego `TopNavbar` w systemie **DeSchema Mentor** w oparciu o zasady Clean Architecture, SOLID oraz wytyczne użytkownika zebrane w fazie projektowej.
-
----
-
-## 1. Architektura i Podział Odpowiedzialności (SOLID)
-
-### A. Komponenty i Moduły
-1. **`src/types/navigation.types.ts`**:
-   - Definicje interfejsów stanu: `SettingsState` (model, deepThinking, language, controlsConfig).
-   - Definicje struktur pomocy: `HelpPromptItem`, `ChatShortcutItem`.
-   - Typy zdarzeń nawigacji i wgrywania JSON.
-2. **`src/components/navigation/SettingsDropdown.tsx`**:
-   - Dropdown z sekcjami:
-     - **Silnik:** dwukierunkowy wybór modelu AI (`gemini-3.5-flash-lite`, `gemini-3.8-flash`, `gemini-4-argon`) + przełącznik `Deep Thinking Mode`.
-     - **Język:** selektor `PL` / `EN` (elegancki interfejs wyboru).
-     - **Sterowanie:** wygaszona sekcja `disabled` z informacją o przyszłej konfiguracji skrótów i czułości.
-3. **`src/components/navigation/HelpDrawer.tsx`**:
-   - Wysuwany z prawej strony boczny panel (Drawer) z tłem typu backdrop blur i animacją:
-     - **Sterowanie czatem:** instrukcja metody sokratejskiej oraz lista skrótów klawiszowych (np. `Enter` – wyślij, `Shift+Enter` – nowa linia, `Esc` – zamknij panel).
-     - **Baza podpowiedzi:** zgrupowane akcje sokratejskie przeniesione z paska czatu (`Wskazówka`, `Wyjaśnij prościej`, `Dlaczego tak zrobiliśmy`, `Ściągawka praw`, `Podsumujmy`).
-     - Kliknięcie w podpowiedź natychmiast wyzwala prompt w aktywnym czacie (lub otwiera ściągawkę praw dla `Ściągawka praw`).
-4. **`src/components/modals/AboutModal.tsx`**:
-   - Dedykowane okno dialogowe: nazwa, wersja, autorzy (@s-reinmar), licencja MIT, stack technologiczny i cele dydaktyczne.
-5. **`src/components/navigation/JsonUploadButton.tsx`**:
-   - Kompaktowy przycisk wyzwalający ukryty `<input type="file" accept=".json" />`.
-   - Asynchroniczne wczytanie (`file.text()`), bezpieczny `JSON.parse` w bloku `try...catch`, walidacja struktury `Circuit`, obsługa powiadomienia o błędzie oraz reset `input.value = ''`.
-6. **`src/components/TopNavbar.tsx` (Koordynator / Facade)**:
-   - Integracja wszystkich modułów w czystym pasku o długości poniżej 200 linii.
+Zgodnie z wytycznymi użytkownika przebudowujemy strukturę górnego menu (`TopNavbar`), wprowadzamy moduł zarządzania sesją (pełny stan nauki) oraz modalny katalog układów z zarezerwowanym miejscem pod przyszłą rozbudowę.
 
 ---
 
-## 2. Zmiany w UI i Integracja z Czatorem Sokratejskim
-
-1. **Przeniesienie podpowiedzi z `SocraticChatPanel.tsx`**:
-   - Usunięcie powielonych przycisków `QUICK_ACTIONS` z dołu panelu czatu, aby zyskać czystszy, bardziej przestronny interfejs dialogowy.
-   - Stan wybranego modelu i `thinkingEnabled` zostanie podniesiony do poziomu rodzica (`App.tsx`) lub przekazany poprzez callbacki, umożliwiając synchronizację z nowym menu **Ustawienia**.
-2. **Globalny callback do wyzwalania promptu**:
-   - `onTriggerPrompt: (promptText: string) => void` przekazywany do `TopNavbar` -> `HelpDrawer`.
+## 1. Kolejność i Struktura Nowego Menu Górnego (`TopNavbar`)
+Pasek nawigacji otrzyma następujący, uporządkowany układ:
+1. **Logo & Nazwa** (`DeSchema Mentor`)
+2. **Sesja** (Nowy Dropdown przed „Układy” i „Ustawienia”):
+   - **Zapisz postęp (Eksportuj do JSON):** pobranie pełnego stanu (`obwód`, `krok`, `historia czatu`, `znaczniki schematu`, `timestamp`).
+   - **Wczytaj sesję (Importuj z JSON):** bezpieczny odczyt pliku `.json` i odtworzenie stanu sesji.
+   - **Historia sesji / Wznów poprzednią:** lista poprzednich sesji zapisanych lokalnie w `localStorage` z możliwością natychmiastowego wznowienia.
+3. **Układy** (Nowy Przycisk otwierający Okno Modalne – za „Sesją”, przed „Ustawieniami”):
+   - Wizualny katalog dostępnych obwodów wzorcowych z podglądem tytułów, opisów i liczby kroków.
+   - Możliwość natychmiastowego przełączenia aktywnego obwodu.
+   - Eleganckie, zarezerwowane puste miejsce (placeholder) pod przyszłe dodawanie układów (bez aktywnej implementacji wgrywania JSON).
+4. **Ustawienia** (Istniejący Dropdown: Silnik AI, Deep Thinking, Język, Sterowanie).
+5. **Pomoc** (Wysuwany Drawer: Skróty, instrukcja, Baza podpowiedzi).
+6. **O programie** (Modal: Informacje o aplikacji, autor, licencja MIT).
+7. **Przełącznik motywu** (Jasny/Ciemny).
 
 ---
 
-## 3. Dostępność (ARIA) i UX
-- Menu rozwijane Ustawień wyposażone w `aria-haspopup="true"`, `aria-expanded` oraz nasłuchiwanie kliknięcia poza obszar (Click Outside) i klawisza `Escape`.
-- Drawer Pomocy z atrybutem `role="dialog"`, `aria-label="Panel pomocy i baza podpowiedzi"`.
-- Zapewnienie pełnej responsywności mobilnej (Drawer i Dropdown dostosowane do ekranów dotykowych).
+## 2. Usunięcie Starego Wgrywania JSON (Kompaktowy i Czysty UI)
+1. **Z `TopNavbar.tsx`:** Usunięcie przycisku `JsonUploadButton` oraz starego `UploadModal`.
+2. **Z `SchematicControlsBar.tsx` (Pasek schematu):** Usunięcie przycisku `FolderOpen` („Wgraj układ”) oraz callbacku `onOpenUploadModal`.
+3. **Z `SvgSchematicViewer.tsx`:** Usunięcie referencji do `onOpenUploadModal`.
+4. **Z `App.tsx`:** Usunięcie `UploadModal` i stanu `isUploadModalOpen`.
 
 ---
 
-## 4. Weryfikacja i Raport
-1. Kompilacja TypeScript (`npm run lint` / `tsc --noEmit`).
-2. Budowanie produkcyjne (`compile_applet`).
-3. Wygenerowanie raportu architektonicznego w `docs/changes/topmenu-refactor-settings-help-json.md`.
+## 3. Nowe Moduły i Interfejsy (SOLID)
+1. **`src/types/session.types.ts`:**
+   - `SessionData`: `version`, `circuitId`, `currentStepNumber`, `chatMessages`, `annotations`, `savedAt`, `title`.
+   - `SessionHistoryEntry`: metadane historii sesji.
+2. **`src/services/session.service.ts`:**
+   - Czysty serwis domenowy (bez zależności od React): serializacja do JSON, pobieranie przez przeglądarkę (`Blob`/`URL.createObjectURL`), walidacja importu, persystencja historii w `localStorage`.
+3. **`src/components/navigation/SessionDropdown.tsx`:**
+   - Dropdown w menu górnym obsługujący eksport, import i listę historii.
+4. **`src/components/modals/CircuitsManagerModal.tsx`:**
+   - Dedykowane okno modalne do przeglądania i aktywacji układów z zarezerwowanym pustym miejscem pod przyszłe wgrywanie.
+
+---
+
+## 4. Weryfikacja Jakościowa
+1. Testy statyczne TypeScript (`npm run lint` / `tsc --noEmit`).
+2. Kompilacja produkcyjna (`compile_applet`).
+3. Wygenerowanie raportu architektonicznego w `docs/changes/session-management-and-circuits-catalog.md`.
