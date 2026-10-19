@@ -57,8 +57,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
-    handleWheel,
-  } = useSchematicPanZoom();
+  } = useSchematicPanZoom(containerRef);
 
   const width = parseViewBoxWidth(circuit.svgViewBox);
   const height = parseViewBoxHeight(circuit.svgViewBox);
@@ -169,8 +168,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
-        className={`relative p-4 sm:p-8 flex items-center justify-center bg-slate-950/90 overflow-hidden min-h-[400px] sm:min-h-[460px] select-none ${
+        className={`relative p-4 sm:p-8 flex items-center justify-center bg-slate-950/90 overflow-hidden min-h-[400px] sm:min-h-[460px] select-none overscroll-contain touch-none ${
           isDragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
       >

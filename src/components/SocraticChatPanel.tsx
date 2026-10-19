@@ -203,7 +203,7 @@ export const SocraticChatPanel: React.FC<Props> = ({ circuit, currentStep }) => 
       </div>
 
       {/* 2. Lista wiadomości z formatowaniem wzorów fizycznych i toku myślenia */}
-      <div className="p-4 sm:p-5 flex-1 min-h-[300px] max-h-[460px] overflow-y-auto space-y-3.5 text-xs bg-slate-950/60">
+      <div className="p-4 sm:p-5 flex-1 min-h-[300px] max-h-[460px] overflow-y-auto space-y-3.5 text-xs bg-slate-950/60 no-scrollbar">
         {messages.map((msg) => {
           const isMentor = msg.role === 'mentor';
           return (

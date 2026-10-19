@@ -122,7 +122,7 @@ export default function App() {
               {/* Left Panel: Socratic Pedagogical Inquiry & Dialogue */}
               <section
                 aria-label="Panel pedagogiczny analizy sokratejskiej"
-                className="xl:col-span-5 flex flex-col gap-6"
+                className="xl:col-span-5 flex flex-col gap-6 xl:max-h-[calc(100vh-8.5rem)] xl:overflow-y-auto overscroll-contain no-scrollbar"
               >
                 <SocraticStepSection
                   circuit={currentCircuit}
@@ -135,7 +135,7 @@ export default function App() {
               {/* Right Panel: Advanced SvgSchematicViewer Engine */}
               <section
                 aria-label="Prawy panel wizualizacji schematu elektronicznego"
-                className="xl:col-span-7 flex flex-col gap-6 sticky xl:top-20"
+                className="xl:col-span-7 flex flex-col gap-6 xl:sticky xl:top-20 overscroll-contain no-scrollbar"
               >
                 <SvgSchematicViewer
                   circuit={currentCircuit}

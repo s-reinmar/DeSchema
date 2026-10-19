@@ -5,7 +5,7 @@
  * @license MIT
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import type { PanZoomState } from '../types/annotation.types.ts';
 
 const MIN_SCALE = 0.6;
@@ -22,10 +22,11 @@ interface UseSchematicPanZoomReturn {
   readonly handleMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
   readonly handleMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void;
   readonly handleMouseUp: () => void;
-  readonly handleWheel: (e: React.WheelEvent<HTMLDivElement>) => void;
 }
 
-export function useSchematicPanZoom(): UseSchematicPanZoomReturn {
+export function useSchematicPanZoom(
+  containerRef?: React.RefObject<HTMLDivElement | null>
+): UseSchematicPanZoomReturn {
   const [transform, setTransform] = useState<PanZoomState>({
     scale: DEFAULT_SCALE,
     translateX: 0,
@@ -35,6 +36,28 @@ export function useSchematicPanZoom(): UseSchematicPanZoomReturn {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const startTranslateRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const element = containerRef?.current;
+    if (!element) return;
+
+    const onNativeWheel = (e: WheelEvent) => {
+      // Prevent browser viewport from scrolling when zooming schematic
+      e.preventDefault();
+      e.stopPropagation();
+      const zoomDelta = e.deltaY < 0 ? 0.15 : -0.15;
+
+      setTransform((prev) => ({
+        ...prev,
+        scale: Math.min(Math.max(prev.scale + zoomDelta, MIN_SCALE), MAX_SCALE),
+      }));
+    };
+
+    element.addEventListener('wheel', onNativeWheel, { passive: false });
+    return () => {
+      element.removeEventListener('wheel', onNativeWheel);
+    };
+  }, [containerRef]);
 
   const zoomIn = useCallback(() => {
     setTransform((prev) => ({
@@ -99,16 +122,6 @@ export function useSchematicPanZoom(): UseSchematicPanZoomReturn {
     setIsDragging(false);
   }, []);
 
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const zoomDelta = e.deltaY < 0 ? 0.12 : -0.12;
-
-    setTransform((prev) => ({
-      ...prev,
-      scale: Math.min(Math.max(prev.scale + zoomDelta, MIN_SCALE), MAX_SCALE),
-    }));
-  }, []);
-
   return {
     transform,
     isDragging,
@@ -119,6 +132,5 @@ export function useSchematicPanZoom(): UseSchematicPanZoomReturn {
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
-    handleWheel,
   };
 }
