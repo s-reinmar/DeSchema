@@ -78,7 +78,7 @@ export const CircuitViewer: React.FC<Props> = ({ circuit, activeTargetSymbolIds 
             dangerouslySetInnerHTML={{ __html: circuit.svgContent }}
           />
 
-          {/* Interactive symbol hotspot overlays */}
+          {/* Interactive symbol hotspot overlays: Outline Highlight (obrys układu) */}
           {circuit.symbols.map((sym) => {
             const isActiveInStep = activeTargetSymbolIds.includes(sym.id);
             const isSelected = selectedSymbol?.id === sym.id;
@@ -87,21 +87,33 @@ export const CircuitViewer: React.FC<Props> = ({ circuit, activeTargetSymbolIds 
               <div
                 key={sym.id}
                 onClick={() => setSelectedSymbol(isSelected ? null : sym)}
-                className={`absolute cursor-pointer transition-all duration-300 transform -translate-x-1/2 -translate-y-1/2 z-20 group`}
+                className="absolute cursor-pointer transition-all duration-200 transform -translate-x-1/2 -translate-y-1/2 z-20 group"
                 style={{
                   left: `${(sym.x / parseViewBoxWidth(circuit.svgViewBox)) * 100}%`,
                   top: `${(sym.y / parseViewBoxHeight(circuit.svgViewBox)) * 100}%`,
                 }}
+                title={`${sym.label}: ${sym.name || ''}`}
               >
-                {/* Glowing ring if active in current Socratic Step */}
+                {/* Obrys elementu: przezroczysty środek, nie zasłaniający grafiki schematu */}
                 <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-transform ${
-                    isActiveInStep
-                      ? 'border-cyan-400 bg-cyan-500/20 shadow-[0_0_15px_rgba(56,189,248,0.7)] animate-pulse scale-110'
-                      : 'border-slate-600 bg-slate-900/70 hover:border-indigo-400 opacity-60 hover:opacity-100 hover:scale-110'
+                  className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl transition-all duration-200 relative flex items-center justify-center ${
+                    isSelected
+                      ? 'border-2 border-amber-400 bg-amber-400/10 shadow-[0_0_20px_rgba(251,191,36,0.9)] ring-2 ring-amber-400/50 scale-110 z-30'
+                      : isActiveInStep
+                      ? 'border-2 border-cyan-400 bg-cyan-400/5 shadow-[0_0_18px_rgba(56,189,248,0.8)] ring-2 ring-cyan-400/30 animate-pulse scale-105'
+                      : 'border border-dashed border-slate-600/40 hover:border-solid hover:border-cyan-400/70 hover:bg-cyan-400/10 bg-transparent opacity-40 hover:opacity-100 hover:scale-105'
                   }`}
                 >
-                  <span className="text-[10px] font-mono font-bold text-white">
+                  {/* Etykieta umieszczona ponad obrysem (nie zasłaniająca symbolu) */}
+                  <span
+                    className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 text-[10px] font-mono font-bold rounded-md shadow-xs pointer-events-none whitespace-nowrap select-none ${
+                      isSelected
+                        ? 'bg-amber-400 text-slate-950 border border-amber-300 font-extrabold'
+                        : isActiveInStep
+                        ? 'bg-slate-950/90 text-cyan-300 border border-cyan-400/60 shadow-[0_0_8px_rgba(6,182,212,0.4)]'
+                        : 'bg-slate-950/80 text-slate-400 border border-slate-700/60 opacity-70 group-hover:opacity-100 group-hover:text-white'
+                    }`}
+                  >
                     {formatSchematicLabel(sym.label)}
                   </span>
                 </div>

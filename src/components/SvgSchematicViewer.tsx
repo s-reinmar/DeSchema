@@ -1,12 +1,13 @@
 /**
  * @file SvgSchematicViewer.tsx
- * @description Advanced vector schematic viewer featuring manual pan/zoom, zoom-to-fit, and interactive annotations.
+ * @description Advanced vector schematic viewer featuring manual pan/zoom, zoom-to-fit,
+ * circuit outline highlights (unobscured view), and dedicated independent symbol inspector window.
  * @author @s-reinmar
  * @license MIT
  */
 
 import React, { useState, useRef } from 'react';
-import { Layers, Info, Move } from 'lucide-react';
+import { Layers, Info } from 'lucide-react';
 import type { Circuit, CircuitSummary, CircuitSymbol } from '../types/circuit.types.ts';
 import type { SchematicAnnotation } from '../types/annotation.types.ts';
 import { SymbolParser } from '../utils/symbol-parser.ts';
@@ -73,10 +74,10 @@ export const SvgSchematicViewer: React.FC<Props> = ({
 
   const width = parseViewBoxWidth(circuit.svgViewBox);
   const height = parseViewBoxHeight(circuit.svgViewBox);
+  const activeStepSymbols = circuit.symbols.filter((s) => activeTargetSymbolIds.includes(s.id));
 
   const handleSymbolClick = (sym: CircuitSymbol) => {
     if (isAnnotationMode) {
-      // Toggle or add annotation for this symbol
       const existing = annotations.find((a) => a.symbolId === sym.id);
       if (existing) {
         setAnnotations((prev) => prev.filter((a) => a.id !== existing.id));
@@ -148,26 +149,36 @@ export const SvgSchematicViewer: React.FC<Props> = ({
         onClearAnnotations={handleClearAnnotations}
       />
 
-      {/* 2. Sub-header info */}
-      <div className="px-5 py-2.5 bg-slate-950/40 border-b border-slate-800/60 flex items-center justify-between text-xs text-slate-400 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <Layers className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="font-semibold text-slate-200">{SymbolParser.formatSymbol(circuit.title)}</span>
+      {/* 2. Sub-header info: Symbole w kroku */}
+      <div className="px-4 sm:px-5 py-2.5 bg-slate-950/40 border-b border-slate-800/60 flex items-center justify-between text-xs text-slate-400 flex-wrap gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Layers className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+          <span className="font-semibold text-slate-200 truncate">{SymbolParser.formatSymbol(circuit.title)}</span>
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] font-mono text-slate-400">Symbole w kroku:</span>
-          {circuit.symbols
-            .filter((s) => activeTargetSymbolIds.includes(s.id))
-            .map((s) => (
-              <button
-                key={s.id}
-                onClick={() => handleSymbolClick(s)}
-                className="px-2 py-0.5 text-xs font-mono font-bold rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 transition cursor-pointer"
-              >
-                {SymbolParser.formatSymbol(s.label)}
-              </button>
-            ))}
+          {activeStepSymbols.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => {
+                setActiveSymbol(s);
+                setIsPinned(true);
+              }}
+              className={`px-2.5 py-1 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer ${
+                activeSymbol?.id === s.id
+                  ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.5)]'
+                  : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/35 hover:bg-cyan-500/25'
+              }`}
+              title="Otwórz okienko ze szczegółami tego komponentu"
+            >
+              {SymbolParser.formatSymbol(s.label)}
+            </button>
+          ))}
+          {activeStepSymbols.length === 0 && (
+            <span className="text-slate-500 italic text-[11px]">Cały schemat</span>
+          )}
         </div>
       </div>
 
@@ -178,7 +189,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className={`relative p-4 sm:p-8 flex items-center justify-center bg-slate-950/90 overflow-hidden min-h-[400px] sm:min-h-[460px] select-none overscroll-contain touch-none ${
+        className={`relative p-4 sm:p-8 flex items-center justify-center bg-slate-950/90 overflow-hidden min-h-[420px] sm:min-h-[480px] select-none overscroll-contain touch-none ${
           isDragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
       >
@@ -213,7 +224,7 @@ export const SvgSchematicViewer: React.FC<Props> = ({
             onRemoveAnnotation={handleRemoveAnnotation}
           />
 
-          {/* Interactive Symbol Hotspots */}
+          {/* Interactive Symbol Hotspots: Podświetlenie Obrysu Układu (bez zasłaniania widoku) */}
           {circuit.symbols.map((sym) => {
             const isActiveInStep = activeTargetSymbolIds.includes(sym.id);
             const isSelected = activeSymbol?.id === sym.id;
@@ -226,24 +237,45 @@ export const SvgSchematicViewer: React.FC<Props> = ({
                 onClick={() => handleSymbolClick(sym)}
                 onMouseEnter={() => handleSymbolHover(sym)}
                 onMouseLeave={handleSymbolLeave}
-                className="absolute cursor-pointer transition-all duration-300 transform -translate-x-1/2 -translate-y-1/2 z-20 group"
+                className="absolute cursor-pointer transition-all duration-200 transform -translate-x-1/2 -translate-y-1/2 z-20 group"
                 style={{
                   left: `${(sym.x / width) * 100}%`,
                   top: `${(sym.y / height) * 100}%`,
                 }}
+                title={`${sym.label}: ${sym.name || ''}`}
               >
+                {/* Obrys elementu: przezroczysty środek, nie zasłaniający grafiki schematu */}
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
+                  className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl transition-all duration-200 relative flex items-center justify-center ${
                     isSelected
-                      ? 'border-amber-400 bg-amber-500/30 shadow-[0_0_20px_rgba(251,191,36,0.9)] scale-125 z-30'
+                      ? 'border-2 border-amber-400 bg-amber-400/10 shadow-[0_0_22px_rgba(251,191,36,0.9)] ring-2 ring-amber-400/50 scale-110 z-30'
                       : hasAnnotation
-                      ? 'border-amber-400 bg-amber-500/20 shadow-[0_0_12px_rgba(251,191,36,0.6)] scale-110'
+                      ? 'border-2 border-dashed border-amber-400 bg-amber-400/5 shadow-[0_0_12px_rgba(251,191,36,0.5)] scale-105'
                       : isActiveInStep
-                      ? 'border-cyan-400 bg-cyan-500/25 shadow-[0_0_15px_rgba(6,182,212,0.8)] animate-pulse scale-110'
-                      : 'border-slate-600 bg-slate-900/80 hover:border-indigo-400 opacity-75 hover:opacity-100 hover:scale-115'
+                      ? 'border-2 border-cyan-400 bg-cyan-400/5 shadow-[0_0_18px_rgba(6,182,212,0.8)] ring-2 ring-cyan-400/30 animate-pulse scale-105'
+                      : 'border border-dashed border-slate-600/40 hover:border-solid hover:border-cyan-400/70 hover:bg-cyan-400/10 bg-transparent opacity-40 hover:opacity-100 hover:scale-105'
                   }`}
                 >
-                  <span className="text-[11px] font-mono font-bold text-white tracking-tight">
+                  {/* Narożniki celownika dla aktywnego obrysu */}
+                  {(isActiveInStep || isSelected) && (
+                    <>
+                      <span className="absolute -top-1 -left-1 w-2 h-2 border-t-2 border-l-2 border-current pointer-events-none" />
+                      <span className="absolute -top-1 -right-1 w-2 h-2 border-t-2 border-r-2 border-current pointer-events-none" />
+                      <span className="absolute -bottom-1 -left-1 w-2 h-2 border-b-2 border-l-2 border-current pointer-events-none" />
+                      <span className="absolute -bottom-1 -right-1 w-2 h-2 border-b-2 border-r-2 border-current pointer-events-none" />
+                    </>
+                  )}
+
+                  {/* Etykieta umieszczona ponad obrysem (nie zasłaniająca symbolu) */}
+                  <span
+                    className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 text-[10px] font-mono font-bold rounded-md shadow-xs pointer-events-none whitespace-nowrap transition-all select-none ${
+                      isSelected
+                        ? 'bg-amber-400 text-slate-950 border border-amber-300 font-extrabold'
+                        : isActiveInStep
+                        ? 'bg-slate-950/90 text-cyan-300 border border-cyan-400/60 shadow-[0_0_8px_rgba(6,182,212,0.4)]'
+                        : 'bg-slate-950/80 text-slate-400 border border-slate-700/60 opacity-70 group-hover:opacity-100 group-hover:text-white'
+                    }`}
+                  >
                     {SymbolParser.formatSymbol(sym.label)}
                   </span>
                 </div>
@@ -252,10 +284,15 @@ export const SvgSchematicViewer: React.FC<Props> = ({
           })}
         </div>
 
-        {/* Popover Card */}
+        {/* Dedykowane okienko szczegółów symbolu (nieucinanające od góry, niezależny scrollbar) */}
         <SymbolShowUpPopover
           symbol={activeSymbol}
           isPinned={isPinned}
+          activeStepSymbols={activeStepSymbols}
+          onSelectSymbol={(sym) => {
+            setActiveSymbol(sym);
+            setIsPinned(true);
+          }}
           onClose={() => {
             setActiveSymbol(null);
             setIsPinned(false);
@@ -264,8 +301,8 @@ export const SvgSchematicViewer: React.FC<Props> = ({
         />
       </div>
 
-      {/* 4. Bottom status helper bar */}
-      <div className="px-5 py-2.5 bg-slate-900/80 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 flex-wrap gap-2">
+      {/* 4. Bottom status helper bar (Całkowicie usunięte współrzędne Pan/Skala) */}
+      <div className="px-5 py-2.5 bg-slate-900/80 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
         <div className="flex items-center gap-2">
           <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
           <span>
@@ -275,18 +312,10 @@ export const SvgSchematicViewer: React.FC<Props> = ({
               </span>
             ) : (
               <span>
-                Przeciągaj myszą, aby przesuwać schemat • Kółko myszy = zoom • Przycisk &apos;Dopasuj&apos; = zoom-to-fit • Kliknięcie komponentu = karta &apos;Show-Up&apos;.
+                Przeciągaj myszą, aby przesuwać schemat • Kółko myszy = zoom • Przycisk &apos;Dopasuj&apos; = zoom-to-fit • Kliknięcie komponentu = dedykowane okienko &apos;Show-Up&apos;.
               </span>
             )}
           </span>
-        </div>
-
-        <div className="flex items-center gap-2.5 font-mono text-[11px] text-slate-500">
-          <span className="flex items-center gap-1">
-            <Move className="w-3 h-3 text-slate-400" />
-            Pan: {Math.round(transform.translateX)}px, {Math.round(transform.translateY)}px
-          </span>
-          <span className="text-cyan-400 font-bold">Skala: {Math.round(transform.scale * 100)}%</span>
         </div>
       </div>
     </div>

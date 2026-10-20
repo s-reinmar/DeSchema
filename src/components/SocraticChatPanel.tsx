@@ -25,6 +25,7 @@ interface Props {
   readonly currentStep: SocraticStep;
   readonly messages?: readonly ChatMessage[];
   readonly onMessagesChange?: (messages: readonly ChatMessage[]) => void;
+  readonly onStepAutoCompleted?: (stepNumber: number) => void;
 }
 
 export type AvailableModel = AvailableAiModel;
@@ -44,6 +45,7 @@ export const SocraticChatPanel: React.FC<Props> = ({
   currentStep,
   messages: externalMessages,
   onMessagesChange,
+  onStepAutoCompleted,
 }) => {
   const { settings, registerPromptListener } = useSettings();
   const selectedModel = settings.aiModel;
@@ -85,6 +87,9 @@ export const SocraticChatPanel: React.FC<Props> = ({
   const executeSend = async (textToSend: string) => {
     const trimmed = textToSend.trim();
     if (!trimmed || isLoading) return;
+
+    // Automatyczna akceptacja ukończenia etapu po wpisaniu odpowiedzi przez ucznia
+    onStepAutoCompleted?.(currentStep.stepNumber);
 
     const studentMsg: ChatMessage = {
       id: `msg-${Date.now()}-student`,

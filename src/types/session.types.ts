@@ -27,6 +27,7 @@ export interface SessionData {
   readonly circuitId: string;
   readonly circuitTitle: string;
   readonly stepNumber: 1 | 2 | 3 | 4;
+  readonly completedStepNumbers?: readonly number[];
   readonly messages: readonly SessionChatMessage[];
   readonly annotations: readonly SchematicAnnotation[];
   readonly savedAt: string;

@@ -41,6 +41,16 @@ export function useSchematicPanZoom(
     if (!element) return;
 
     const onNativeWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.closest('[data-scrollable="true"]') ||
+        target?.closest('.dedicated-scrollbar') ||
+        target?.closest('[data-no-pan="true"]')
+      ) {
+        // Pozwól na niezależne przewijanie góra-dół dedykowanych okienek bez wpływu na zoom/pan schematu
+        return;
+      }
+
       // Prevent browser viewport from scrolling when zooming schematic
       e.preventDefault();
       e.stopPropagation();

@@ -334,3 +334,29 @@ html.light aside[role="complementary"] {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Dedykowany niezależny pasek przewijania okienek */
+.dedicated-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(6, 182, 212, 0.4) rgba(15, 23, 42, 0.6);
+}
+
+.dedicated-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.dedicated-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 9999px;
+}
+
+.dedicated-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.4);
+  border-radius: 9999px;
+}
+
+.dedicated-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.7);
+}
+

@@ -38,6 +38,7 @@ function DeSchemaWorkspace() {
   const [circuits, setCircuits] = useState<readonly Circuit[]>(() => repository.getAll());
   const [currentCircuitId, setCurrentCircuitId] = useState<string>('half-wave-rectifier');
   const [currentStepNumber, setCurrentStepNumber] = useState<1 | 2 | 3 | 4>(1);
+  const [completedStepNumbers, setCompletedStepNumbers] = useState<readonly number[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Full session state shared between navbar export/import and workspace panels
@@ -94,19 +95,32 @@ function DeSchemaWorkspace() {
   const handleSelectCircuit = (id: string) => {
     setCurrentCircuitId(id);
     setCurrentStepNumber(1);
+    setCompletedStepNumbers([]);
   };
 
   const handlePreviousCircuit = () => {
     const prevId = repository.getPreviousCircuitId(currentCircuitId);
     setCurrentCircuitId(prevId);
     setCurrentStepNumber(1);
+    setCompletedStepNumbers([]);
   };
 
   const handleNextCircuit = () => {
     const nextId = repository.getNextCircuitId(currentCircuitId);
     setCurrentCircuitId(nextId);
     setCurrentStepNumber(1);
+    setCompletedStepNumbers([]);
   };
+
+  const handleToggleStepCompleted = useCallback((stepNumber: number) => {
+    setCompletedStepNumbers((prev) =>
+      prev.includes(stepNumber) ? prev.filter((n) => n !== stepNumber) : [...prev, stepNumber]
+    );
+  }, []);
+
+  const handleStepAutoCompleted = useCallback((stepNumber: number) => {
+    setCompletedStepNumbers((prev) => (prev.includes(stepNumber) ? prev : [...prev, stepNumber]));
+  }, []);
 
   const handleSaveCustomCircuit = useCallback(
     async (circuit: Circuit): Promise<void> => {
@@ -120,6 +134,7 @@ function DeSchemaWorkspace() {
         setCurrentCircuitId(circuit.id);
       }
       setCurrentStepNumber(1);
+      setCompletedStepNumbers([]);
     },
     [repository, idToken]
   );
@@ -136,6 +151,7 @@ function DeSchemaWorkspace() {
       if (currentCircuitId === id && updated.length > 0) {
         setCurrentCircuitId(updated[0].id);
         setCurrentStepNumber(1);
+        setCompletedStepNumbers([]);
       }
     },
     [repository, idToken, currentCircuitId]
@@ -148,6 +164,7 @@ function DeSchemaWorkspace() {
       circuitId: currentCircuitId,
       circuitTitle: currentCircuit?.title ?? currentCircuitId,
       stepNumber: currentStepNumber,
+      completedStepNumbers,
       messages: messages.map((m) => ({
         id: m.id,
         role: m.role,
@@ -166,6 +183,9 @@ function DeSchemaWorkspace() {
     }
     if (session.stepNumber && session.stepNumber >= 1 && session.stepNumber <= 4) {
       setCurrentStepNumber(session.stepNumber);
+    }
+    if (session.completedStepNumbers && Array.isArray(session.completedStepNumbers)) {
+      setCompletedStepNumbers(session.completedStepNumbers);
     }
     if (session.messages && Array.isArray(session.messages)) {
       setMessages(
@@ -224,6 +244,9 @@ function DeSchemaWorkspace() {
               steps={currentCircuit.socraticSteps}
               currentStepNumber={currentStepNumber}
               onStepChange={setCurrentStepNumber}
+              completedStepNumbers={completedStepNumbers}
+              onToggleStepCompleted={handleToggleStepCompleted}
+              onStepAutoCompleted={handleStepAutoCompleted}
               messages={messages}
               onMessagesChange={setMessages}
             />

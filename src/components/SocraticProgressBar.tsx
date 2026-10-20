@@ -1,7 +1,7 @@
 /**
  * @file SocraticProgressBar.tsx
- * @description Accessible, animated progress bar visualizing the current stage of circuit schematic analysis,
- * with adaptive high-contrast styling for both Dark and Light themes.
+ * @description Accessible progress bar visualizing Socratic inquiry stages with discrete status markers
+ * and true 100% completion celebration once all stages are resolved.
  * @author @s-reinmar
  * @license MIT
  */
@@ -18,6 +18,7 @@ interface Props {
   readonly currentStepNumber: number;
   readonly totalSteps: number;
   readonly currentStepTitle?: string;
+  readonly completedStepNumbers: readonly number[];
 }
 
 /**
@@ -27,23 +28,29 @@ export const SocraticProgressBar: React.FC<Props> = ({
   currentStepNumber,
   totalSteps,
   currentStepTitle,
+  completedStepNumbers,
 }) => {
   const { theme } = useTheme();
   const isLight = theme === 'light';
 
   const safeTotal = Math.max(totalSteps, 1);
   const clampedStep = Math.min(Math.max(currentStepNumber, 1), safeTotal);
-  const percentage = Math.round((clampedStep / safeTotal) * 100);
-  const isComplete = clampedStep === safeTotal;
+  const completedCount = completedStepNumbers.filter((n) => n >= 1 && n <= safeTotal).length;
+  const isAllCompleted = completedCount >= safeTotal;
+  const progressPercent = Math.round((completedCount / safeTotal) * 100);
 
   return (
     <div
       role="progressbar"
       aria-label="Postęp analizy sokratejskiej schematu"
-      aria-valuenow={clampedStep}
-      aria-valuemin={1}
+      aria-valuenow={completedCount}
+      aria-valuemin={0}
       aria-valuemax={safeTotal}
-      aria-valuetext={`Krok ${clampedStep} z ${safeTotal} (${percentage}%)`}
+      aria-valuetext={
+        isAllCompleted
+          ? '100% ukończono'
+          : `Krok ${clampedStep} z ${safeTotal} (Ukończono ${completedCount} z ${safeTotal} etapów)`
+      }
       className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col gap-2.5 transition-all duration-200 ${
         isLight
           ? 'bg-white border-slate-200 shadow-md text-slate-900 ring-1 ring-slate-100/70'
@@ -60,7 +67,7 @@ export const SocraticProgressBar: React.FC<Props> = ({
                 : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
             }`}
           >
-            {isComplete ? (
+            {isAllCompleted ? (
               <CheckCircle2 className={`w-3.5 h-3.5 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
             ) : (
               <Flame className={`w-3.5 h-3.5 ${isLight ? 'text-amber-600' : 'text-amber-400'} animate-pulse`} />
@@ -85,36 +92,59 @@ export const SocraticProgressBar: React.FC<Props> = ({
           </div>
         </div>
 
+        {/* Completion Indicator: 100% only when all steps completed, otherwise discrete status */}
         <div className="flex items-center gap-1.5">
-          <span
-            className={`px-2.5 py-0.5 rounded-full font-mono font-bold text-[11px] border flex items-center gap-1 ${
-              isLight
-                ? 'bg-cyan-50 text-cyan-800 border-cyan-200 shadow-xs'
-                : 'bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 text-cyan-300 border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.15)]'
-            }`}
-          >
-            <Sparkles className={`w-3 h-3 ${isLight ? 'text-cyan-600' : 'text-cyan-400'}`} />
-            {percentage}% ukończono
-          </span>
+          {isAllCompleted ? (
+            <span
+              className={`px-3 py-1 rounded-full font-mono font-bold text-xs border flex items-center gap-1.5 animate-pulse ${
+                isLight
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-xs'
+                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+              }`}
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
+              <span>100% ukończono</span>
+            </span>
+          ) : (
+            <div
+              className={`px-2.5 py-0.5 rounded-lg font-mono text-[11px] border flex items-center gap-1.5 ${
+                isLight
+                  ? 'bg-slate-100 text-slate-700 border-slate-200'
+                  : 'bg-slate-800/80 text-slate-300 border-slate-700/60'
+              }`}
+            >
+              <span className="text-slate-400">Ukończono:</span>
+              <span className={`font-bold ${completedCount > 0 ? 'text-emerald-400' : 'text-slate-400'}`}>
+                {completedCount}
+              </span>
+              <span className="text-slate-500">/</span>
+              <span className="font-semibold text-slate-300">{safeTotal}</span>
+              <span className="hidden sm:inline text-slate-400">etapów</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Progress Bar Track */}
       <div
-        className={`relative w-full h-2.5 rounded-full overflow-hidden border p-0.5 ${
+        className={`relative w-full h-2 rounded-full overflow-hidden border p-0.5 ${
           isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-950 border-slate-800'
         }`}
       >
         <div
-          className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-400 transition-all duration-500 ease-out shadow-[0_0_12px_rgba(6,182,212,0.7)]"
-          style={{ width: `${percentage}%` }}
+          className={`h-full rounded-full transition-all duration-500 ease-out ${
+            isAllCompleted
+              ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 shadow-[0_0_12px_rgba(16,185,129,0.7)]'
+              : 'bg-gradient-to-r from-cyan-500 to-indigo-500 shadow-[0_0_8px_rgba(6,182,212,0.5)]'
+          }`}
+          style={{ width: `${progressPercent}%` }}
         />
       </div>
 
-      {/* Segment Markers */}
+      {/* Discrete Segment Status Markers (Etapy 1-4) */}
       <div className="flex items-center justify-between px-1 pt-0.5 text-[10px] font-mono">
         {Array.from({ length: safeTotal }, (_, i) => i + 1).map((stepIndex) => {
-          const isPassed = stepIndex < clampedStep;
+          const isDone = completedStepNumbers.includes(stepIndex);
           const isCurrent = stepIndex === clampedStep;
 
           return (
@@ -125,13 +155,13 @@ export const SocraticProgressBar: React.FC<Props> = ({
                   ? isLight
                     ? 'text-cyan-700 font-bold'
                     : 'text-cyan-300 font-bold'
-                  : isPassed
+                  : isDone
                   ? isLight
                     ? 'text-emerald-700 font-medium'
                     : 'text-emerald-400 font-medium'
                   : isLight
                   ? 'text-slate-400'
-                  : 'text-slate-600'
+                  : 'text-slate-500'
               }`}
             >
               <span
@@ -140,16 +170,27 @@ export const SocraticProgressBar: React.FC<Props> = ({
                     ? isLight
                       ? 'bg-cyan-600 ring-2 ring-cyan-500/30 animate-pulse'
                       : 'bg-cyan-400 ring-2 ring-cyan-400/40 animate-pulse'
-                    : isPassed
-                    ? isLight
-                      ? 'bg-emerald-600'
-                      : 'bg-emerald-400'
-                    : isLight
-                    ? 'bg-slate-300'
-                    : 'bg-slate-700'
+                  : isDone
+                  ? isLight
+                    ? 'bg-emerald-600'
+                    : 'bg-emerald-400'
+                  : isLight
+                  ? 'bg-slate-300'
+                  : 'bg-slate-700'
                 }`}
               />
-              <span className="hidden sm:inline">Etap {stepIndex}</span>
+              <span className="hidden sm:inline">Etap {stepIndex}:</span>
+              <span
+                className={`font-semibold ${
+                  isDone
+                    ? 'text-emerald-400'
+                    : isCurrent
+                    ? 'text-cyan-300'
+                    : 'text-slate-500'
+                }`}
+              >
+                {isDone ? 'Tak' : 'Nie'}
+              </span>
             </span>
           );
         })}
