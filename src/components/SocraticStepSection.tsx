@@ -161,9 +161,9 @@ export const SocraticStepSection: React.FC<Props> = ({
 
           {/* Right Action Controls: Tak/Nie completion + Dynamic Icon Buttons */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Pole wyboru Tak/Nie */}
+            {/* Pole statusu Tak/Nie (nieklikalne dla użytkownika, sterowane wyłącznie przez czat) */}
             <div
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs select-none ${
                 isLight
                   ? 'bg-slate-100/90 border-slate-200'
                   : 'bg-slate-900/90 border-slate-800'
@@ -172,20 +172,18 @@ export const SocraticStepSection: React.FC<Props> = ({
               <span className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                 Ukończono:
               </span>
-              <button
-                type="button"
-                onClick={() => onToggleStepCompleted(currentStep.stepNumber)}
-                className={`px-2 py-0.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
+              <span
+                className={`px-2 py-0.5 rounded-lg text-xs font-bold font-mono transition-all ${
                   isCurrentStepCompleted
                     ? 'bg-emerald-500 text-slate-950 shadow-xs'
                     : isLight
-                    ? 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-slate-200 text-slate-600'
+                    : 'bg-slate-800 text-slate-400'
                 }`}
-                title="Status ukończenia etapu (akceptowane automatycznie po wpisaniu odpowiedzi na czacie lub manualnie)"
+                title="Status ukończenia etapu: sterowane wyłącznie przez czat po poprawnej odpowiedzi ucznia"
               >
                 {isCurrentStepCompleted ? 'Tak' : 'Nie'}
-              </button>
+              </span>
             </div>
 
             {/* Dynamiczna Ikona: Potrzebuje naprowadzenia */}

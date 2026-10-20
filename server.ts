@@ -105,6 +105,12 @@ ZASADY BEZWZGLĘDNE (UNBREAKABLE RULES):
 6. FORMATOWANIE SYMBOLI I WZORÓW:
    Używaj czystej notacji inżynierskiej z indeksami dolnymi (np. U_in, R_b1, I_C, U_z, C_filtr) lub symboli Unicode (Δ, π, β, ·, ≈, ≥, ≤).
    ABSOLUTNY ZAKAZ używania składni tabelarycznej LaTeX (&, \\begin{aligned}, \\end{aligned}) oraz ograniczników $ lub $$.
+7. WERYFIKACJA POPRAWNOŚCI I ZALICZANIE KROKU [STEP_COMPLETED]:
+   Czat steruje zaliczeniem obecnego kroku. Gdy uczeń w swojej wypowiedzi poprawnie wyjaśni wymagane zjawisko fizyczne, wykaże zrozumienie pytania sokratejskiego kroku ${context?.stepNumber ?? 1} (np. prawidłowo wskaże kierunek prądu, polaryzację zaporową/przewodzenia, rolę filtru pojemnościowego, bilans Kirchhoffa, punkt pracy BJT):
+   - Potwierdź z uznaniem poprawność jego dedukcji fizycznej.
+   - NA SAMYM KOŃCU odpowiedzi dopisz znacznik techniczny: [STEP_COMPLETED]
+   Jeśli uczeń dopiero dopytuje, pisze "nie wiem", prosi o pomoc lub jego hipoteza jest błędna/niepełna:
+   - NIE DODAWAJ znacznika [STEP_COMPLETED]. Naprowadź go kolejnym zwięzłym pytaniem sokratejskim.
 
 KONTEKST AKTUALNIE ANALIZOWANEGO OBWODU:
 - Nazwa obwodu: ${context?.title ?? 'Ogólny obwód'}
@@ -123,17 +129,69 @@ ${symbolsInfo}`;
 function generateOfflineSocraticResponse(
   message: string,
   context?: ChatRequestBody['circuitContext']
-): string {
+): { text: string; stepCompleted: boolean } {
   const lower = message.toLowerCase();
   const stepPrompt = context?.stepPrompt ? ` Pomyśl: ${context.stepPrompt}` : '';
+  const isHelpRequest =
+    lower.includes('nie wiem') ||
+    lower.includes('pomoc') ||
+    lower.includes('pomóż') ||
+    lower.includes('wyjaśnij') ||
+    lower === 'cześć' ||
+    lower === 'hej';
+
+  if (!isHelpRequest) {
+    const hasPhysicsKeywords =
+      lower.includes('zaporow') ||
+      lower.includes('przewodz') ||
+      lower.includes('zatkan') ||
+      lower.includes('odcię') ||
+      lower.includes('tau') ||
+      lower.includes('tętn') ||
+      lower.includes('pojemn') ||
+      lower.includes('filtr') ||
+      lower.includes('ładun') ||
+      lower.includes('piv') ||
+      lower.includes('zener') ||
+      lower.includes('kirchhoff') ||
+      lower.includes('ohm') ||
+      lower.includes('spadek') ||
+      lower.includes('napięci') ||
+      lower.includes('prąd') ||
+      lower.includes('baza') ||
+      lower.includes('emiter') ||
+      lower.includes('kolektor') ||
+      lower.includes('dzielnik') ||
+      lower.includes('sprzężen') ||
+      lower.includes('aktywn') ||
+      lower.includes('stabiliz') ||
+      lower.includes('ujemn') ||
+      lower.includes('dodatn');
+
+    if (hasPhysicsKeywords) {
+      return {
+        text: `Doskonała dedukcja fizyczna! Twoja odpowiedź trafnie identyfikuje zachowanie elementów w tym stanie obwodu. Świetnie prześledziłeś relację przyczynowo-skutkową.`,
+        stepCompleted: true,
+      };
+    }
+  }
 
   if (lower.includes('wzro') || lower.includes('rosn') || lower.includes('duz')) {
-    return `Zauważasz tendencję wzrostową. Dobry kierunek myślenia! Jak myślisz, który element obwodu ograniczy ten przyrost zgodnie z II prawem Kirchhoffa?${stepPrompt}`;
+    return {
+      text: `Zauważasz tendencję wzrostową. Dobry kierunek myślenia! Jak myślisz, który element obwodu ograniczy ten przyrost zgodnie z II prawem Kirchhoffa?${stepPrompt}`,
+      stepCompleted: false,
+    };
   }
   if (lower.includes('zmal') || lower.includes('spad') || lower.includes('zero')) {
-    return `Dostrzegasz spadek potencjału. Jeśli napięcie w tym węźle maleje, to gdzie odkłada się pozostała różnica potencjałów źródła?${stepPrompt}`;
+    return {
+      text: `Dostrzegasz spadek potencjału. Jeśli napięcie w tym węźle maleje, to gdzie odkłada się pozostała różnica potencjałów źródła?${stepPrompt}`,
+      stepCompleted: false,
+    };
   }
-  return `Ciekawa myśl! Zastanówmy się: co w tym momencie dzieje się z prądem w gałęzi i jak reaguje złącze P-N? Sprawdź wskazówkę etapu, aby poprowadzić analizę dalej.`;
+  return {
+    text: `Zastanówmy się wspólnie nad tym fragmentem schematu: co w tym momencie dzieje się z prądem w gałęzi i jak reaguje złącze P-N? Sprawdź wskazówkę etapu, aby poprowadzić analizę dalej.`,
+    stepCompleted: false,
+  };
 }
 
 /**
@@ -155,12 +213,13 @@ app.post('/api/chat', async (req: Request, res: Response): Promise<void> => {
   const ai = getGenAiClient();
 
   if (!ai) {
-    const offlineText = generateOfflineSocraticResponse(message, context);
+    const offline = generateOfflineSocraticResponse(message, context);
     res.json({
-      text: offlineText,
+      text: offline.text,
       usedModel: 'offline-socratic-engine',
       fallbackTriggered: false,
       thinkingActive: false,
+      stepCompleted: offline.stepCompleted,
       note: 'Tryb dydaktyczny offline (brak aktywnego klucza GEMINI_API_KEY na serwerze).',
     });
     return;
@@ -242,20 +301,25 @@ app.post('/api/chat', async (req: Request, res: Response): Promise<void> => {
   }
 
   if (finalResponseText) {
+    const stepCompleted = finalResponseText.includes('[STEP_COMPLETED]');
+    const cleanedText = finalResponseText.replace(/\[STEP_COMPLETED\]/g, '').trim();
+
     res.json({
-      text: finalResponseText,
+      text: cleanedText,
       usedModel: modelActuallyUsed,
       fallbackTriggered,
       thinkingActive: thinkingEnabled || modelActuallyUsed === 'gemini-4-argon',
+      stepCompleted,
     });
   } else {
     // Ultimate graceful pedagogical fallback
-    const offlineText = generateOfflineSocraticResponse(message, context);
+    const offline = generateOfflineSocraticResponse(message, context);
     res.json({
-      text: offlineText,
+      text: offline.text,
       usedModel: 'fallback-socratic-heuristics',
       fallbackTriggered: true,
       thinkingActive: false,
+      stepCompleted: offline.stepCompleted,
     });
   }
 });

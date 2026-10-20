@@ -14,6 +14,7 @@ import {
   Loader2,
   AlertCircle,
   Sparkles,
+  CheckCircle2,
 } from 'lucide-react';
 import type { Circuit, SocraticStep } from '../types/circuit.types.ts';
 import { SymbolParser } from '../utils/symbol-parser.ts';
@@ -37,6 +38,7 @@ export interface ChatMessage {
   readonly modelUsed?: string;
   readonly fallbackTriggered?: boolean;
   readonly isThinkingActive?: boolean;
+  readonly stepCompleted?: boolean;
   readonly timestamp: string;
 }
 
@@ -88,9 +90,7 @@ export const SocraticChatPanel: React.FC<Props> = ({
     const trimmed = textToSend.trim();
     if (!trimmed || isLoading) return;
 
-    // Automatyczna akceptacja ukończenia etapu po wpisaniu odpowiedzi przez ucznia
-    onStepAutoCompleted?.(currentStep.stepNumber);
-
+    // Nie zaliczamy kroku przedwcześnie – zaliczeniem steruje czat po poprawnej odpowiedzi
     const studentMsg: ChatMessage = {
       id: `msg-${Date.now()}-student`,
       role: 'student',
@@ -136,15 +136,26 @@ export const SocraticChatPanel: React.FC<Props> = ({
         usedModel?: string;
         fallbackTriggered?: boolean;
         thinkingActive?: boolean;
+        stepCompleted?: boolean;
       };
+
+      const rawText = data.text ?? 'Zastanówmy się nad bilansem napięć w tym oczku obwodu.';
+      const isCompleted = Boolean(data.stepCompleted || rawText.includes('[STEP_COMPLETED]'));
+      const cleanedText = rawText.replace(/\[STEP_COMPLETED\]/g, '').trim();
+
+      // Zaliczenie etapu wyłącznie po poprawnej odpowiedzi zweryfikowanej przez mentora
+      if (isCompleted) {
+        onStepAutoCompleted?.(currentStep.stepNumber);
+      }
 
       const mentorMsg: ChatMessage = {
         id: `msg-${Date.now()}-mentor`,
         role: 'mentor',
-        text: data.text ?? 'Zastanówmy się nad bilansem napięć w tym oczku obwodu.',
+        text: cleanedText,
         modelUsed: data.usedModel ?? selectedModel,
         fallbackTriggered: data.fallbackTriggered,
         isThinkingActive: data.thinkingActive,
+        stepCompleted: isCompleted,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -156,6 +167,7 @@ export const SocraticChatPanel: React.FC<Props> = ({
         text: 'Zwróć uwagę na I i II prawo Kirchhoffa dla tego fragmentu schematu. Co dzieje się z prądem w gałęzi głównej?',
         modelUsed: 'offline-socratic-heuristic',
         fallbackTriggered: true,
+        stepCompleted: false,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, fallbackMsg]);
@@ -277,6 +289,13 @@ export const SocraticChatPanel: React.FC<Props> = ({
                 <div className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">
                   {renderMessageTextWithFormulas(msg.text)}
                 </div>
+
+                {isMentor && msg.stepCompleted && (
+                  <div className="mt-2.5 p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold text-xs flex items-center gap-2 animate-fade-in shadow-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>✓ Etap zaliczony poprawną odpowiedzią!</span>
+                  </div>
+                )}
 
                 {isMentor && msg.modelUsed && (
                   <div className="mt-2 pt-1 border-t border-slate-800/80 flex items-center justify-between text-[9px] font-mono text-slate-400">
