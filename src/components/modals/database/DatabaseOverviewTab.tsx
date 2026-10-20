@@ -118,28 +118,28 @@ export const DatabaseOverviewTab: React.FC<Props> = ({ stats, onRefresh, idToken
         </button>
       </div>
 
-      {/* Summary Stat Cards - Exact user-requested labels */}
+      {/* Summary Stat Cards - Clean Polish labels */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-          <p className="text-xs text-slate-400 font-medium font-mono">Obwody (`circuits`)</p>
+          <p className="text-xs text-slate-400 font-medium">Obwody</p>
           <p className="text-2xl font-bold text-white mt-1">{stats.totalCircuits}</p>
           <p className="text-[11px] text-cyan-400 font-mono mt-0.5">Wektory SVG &amp; schematy</p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-          <p className="text-xs text-slate-400 font-medium font-mono">Symbole (`circuit_symbols`)</p>
+          <p className="text-xs text-slate-400 font-medium">Symbole</p>
           <p className="text-2xl font-bold text-white mt-1">{stats.totalSymbols}</p>
           <p className="text-[11px] text-emerald-400 font-mono mt-0.5">Punkty fizyczne &amp; wzory</p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-          <p className="text-xs text-slate-400 font-medium font-mono">Kroki (`socratic_steps`)</p>
+          <p className="text-xs text-slate-400 font-medium">Kroki</p>
           <p className="text-2xl font-bold text-white mt-1">{stats.totalSteps}</p>
           <p className="text-[11px] text-amber-400 font-mono mt-0.5">Pytania sokratejskie</p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80">
-          <p className="text-xs text-slate-400 font-medium font-mono">Konta (`users`)</p>
+          <p className="text-xs text-slate-400 font-medium">Konta</p>
           <p className="text-2xl font-bold text-white mt-1">{stats.totalUsers}</p>
           <p className="text-[11px] text-indigo-400 font-mono mt-0.5">Model Single-User (Właściciel)</p>
         </div>
