@@ -7,8 +7,9 @@
  */
 
 import React, { useState } from 'react';
-import { X, Save, AlertCircle, Eye, Sparkles } from 'lucide-react';
+import { X, Save, AlertCircle, Eye, Sparkles, Zap, CheckCircle2 } from 'lucide-react';
 import type { Circuit } from '../../types/circuit.types.ts';
+import { svgTokenOptimizer } from '../../services/svg-token-optimizer.service.ts';
 
 interface Props {
   readonly isOpen: boolean;
@@ -25,8 +26,22 @@ export const CreateCircuitModal: React.FC<Props> = ({ isOpen, onClose, onSaveCir
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [optimizationNote, setOptimizationNote] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleOptimize = () => {
+    if (!svgContent.trim()) return;
+    const res = svgTokenOptimizer.optimizeSvg(svgContent);
+    if (!res.report.isValid) {
+      setErrorMessage(res.report.errors.join(' '));
+      return;
+    }
+    setSvgContent(res.cleanSvgContent);
+    setSvgViewBox(res.viewBox);
+    setOptimizationNote(`Zoptymalizowano! Oszczędność tokenów: -${res.report.tokenSavingsPercent}% (czas: ${res.report.executionTimeMs} ms)`);
+    setErrorMessage(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,15 +187,35 @@ export const CreateCircuitModal: React.FC<Props> = ({ isOpen, onClose, onSaveCir
               <label className="block text-xs font-semibold text-slate-300">
                 Zawartość wektorowa SVG (&lt;g&gt;...&lt;/g&gt;) *
               </label>
-              <span className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
-                <Eye className="w-3 h-3" /> Podgląd na żywo
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleOptimize}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-500/30 px-2 py-0.5 rounded-lg transition cursor-pointer"
+                  title="Optymalizuj i skompresuj wektor SVG pod kątem tokenów LLM"
+                >
+                  <Zap className="w-3 h-3 text-cyan-400" />
+                  <span>Optymalizuj Token-Safe</span>
+                </button>
+                <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                  <Eye className="w-3 h-3 text-cyan-400" /> Podgląd
+                </span>
+              </div>
             </div>
+            {optimizationNote && (
+              <div className="mb-2 p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-[11px] text-emerald-300 flex items-center gap-1.5 animate-fade-in">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>{optimizationNote}</span>
+              </div>
+            )}
             <textarea
               rows={5}
               required
               value={svgContent}
-              onChange={(e) => setSvgContent(e.target.value)}
+              onChange={(e) => {
+                setSvgContent(e.target.value);
+                setOptimizationNote(null);
+              }}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs font-mono text-slate-300 placeholder-slate-600 outline-none transition resize-none"
             />
           </div>

@@ -17,11 +17,13 @@ import {
   Lock,
   Trash2,
   Upload,
+  Zap,
 } from 'lucide-react';
 import type { Circuit, CircuitSummary } from '../../types/circuit.types.ts';
 import { SymbolParser } from '../../utils/symbol-parser.ts';
 import { CreateCircuitModal } from './CreateCircuitModal.tsx';
 import { SchematicAiWizardModal } from './SchematicAiWizardModal.tsx';
+import { TokenSafeSvgUploadModal } from './TokenSafeSvgUploadModal.tsx';
 
 interface Props {
   readonly isOpen: boolean;
@@ -43,6 +45,7 @@ export const CircuitsManagerModal: React.FC<Props> = ({
   onDeleteCircuit,
 }) => {
   const [activeTab, setActiveTab] = useState<'public' | 'private'>('public');
+  const [isTokenSafeModalOpen, setIsTokenSafeModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAiWizardOpen, setIsAiWizardOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -143,21 +146,30 @@ export const CircuitsManagerModal: React.FC<Props> = ({
 
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setIsTokenSafeModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-cyan-500/15 border border-cyan-500/35 text-cyan-300 hover:bg-cyan-500/25 rounded-xl transition cursor-pointer shadow-xs"
+                title="Wgraj lub wklej plik .SVG z automatyczną optymalizacją tokenów, czyszczeniem metadanych i analizą bezpieczeństwa"
+              >
+                <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Wgraj SVG (Token Safe)</span>
+              </button>
+
+              <button
                 onClick={() => setIsAiWizardOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 hover:bg-emerald-500/25 rounded-xl transition cursor-pointer shadow-xs"
                 title="Wgraj schemat z pliku graficznego (PNG/JPG) lub wklej ze schowka (Ctrl+V) do analizy AI Gemini"
               >
                 <Upload className="w-3.5 h-3.5" />
-                <span>Wgraj Schemat</span>
+                <span>Analiza AI</span>
               </button>
 
               {onSaveCustomCircuit && (
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl transition cursor-pointer shadow-xs"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl transition cursor-pointer shadow-xs"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
-                  <span>Ręczny edytor</span>
+                  <span>Edytor</span>
                 </button>
               )}
             </div>
@@ -284,6 +296,14 @@ export const CircuitsManagerModal: React.FC<Props> = ({
 
       {onSaveCustomCircuit && (
         <>
+          <TokenSafeSvgUploadModal
+            isOpen={isTokenSafeModalOpen}
+            onClose={() => setIsTokenSafeModalOpen(false)}
+            onSaveCircuit={async (circuit) => {
+              await onSaveCustomCircuit(circuit);
+              onSelectCircuit(circuit.id);
+            }}
+          />
           <CreateCircuitModal
             isOpen={isCreateModalOpen}
             onClose={() => setIsCreateModalOpen(false)}
