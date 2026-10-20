@@ -168,7 +168,7 @@ export const TopNavbar: React.FC<Props> = ({
               className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-cyan-300 hover:bg-slate-900 rounded-xl font-medium"
             >
               <Database className="w-4 h-4 text-cyan-400" />
-              <span>Zarządzaj Bazą Cloud SQL</span>
+              <span>Baza Cloud SQL aktywna</span>
             </button>
 
             <div className="py-1">

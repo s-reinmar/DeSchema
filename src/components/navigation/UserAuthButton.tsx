@@ -78,30 +78,17 @@ export const UserAuthButton: React.FC<Props> = ({ onOpenDatabaseManager }) => {
           <div className="p-3 border-b border-slate-800">
             <p className="text-xs font-bold text-white truncate">{user.displayName || 'Użytkownik DeSchema'}</p>
             <p className="text-[11px] text-slate-400 font-mono truncate mt-0.5">{user.email}</p>
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                onOpenDatabaseManager?.();
-              }}
-              className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition cursor-pointer"
-              title="Otwórz panel zarządzania bazą danych Cloud SQL"
-            >
-              <Database className="w-3 h-3 text-cyan-400" />
-              <span>Baza Cloud SQL aktywna</span>
-            </button>
-          </div>
-
-          <div className="py-1 border-b border-slate-800 space-y-1">
             {onOpenDatabaseManager && (
               <button
                 onClick={() => {
                   setIsOpen(false);
                   onOpenDatabaseManager();
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-slate-800 rounded-xl transition cursor-pointer"
+                className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition cursor-pointer"
+                title="Baza Cloud SQL - kliknij, aby otworzyć panel"
               >
-                <Database className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Zarządzaj bazą danych</span>
+                <Database className="w-3 h-3 text-cyan-400" />
+                <span>Baza Cloud SQL aktywna</span>
               </button>
             )}
           </div>
