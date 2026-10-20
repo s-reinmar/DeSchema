@@ -36,6 +36,6 @@ export const createPool = (): Pool => {
   return global._postgresPool;
 };
 
-const pool = createPool();
+export const pool = createPool();
 
 export const db = drizzle(pool, { schema });

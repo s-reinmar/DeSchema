@@ -6,13 +6,14 @@
  */
 
 import React, { useState } from 'react';
-import { Cpu, HelpCircle, Info, Sun, Moon, Menu, X, CircuitBoard } from 'lucide-react';
+import { Cpu, HelpCircle, Info, Sun, Moon, Menu, X, CircuitBoard, Database } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext.tsx';
 import { SessionDropdown } from './navigation/SessionDropdown.tsx';
 import { SettingsDropdown } from './navigation/SettingsDropdown.tsx';
 import { HelpDrawer } from './navigation/HelpDrawer.tsx';
 import { UserAuthButton } from './navigation/UserAuthButton.tsx';
 import { CircuitsManagerModal } from './modals/CircuitsManagerModal.tsx';
+import { DatabaseManagerModal } from './modals/database/DatabaseManagerModal.tsx';
 import { AboutModal } from './modals/AboutModal.tsx';
 import { CheatsheetModal } from './modals/CheatsheetModal.tsx';
 import type { Circuit, CircuitSummary } from '../types/circuit.types.ts';
@@ -39,6 +40,7 @@ export const TopNavbar: React.FC<Props> = ({
 }) => {
   const { theme, toggleTheme } = useTheme();
   const [isCircuitsModalOpen, setIsCircuitsModalOpen] = useState(false);
+  const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
   const [isHelpDrawerOpen, setIsHelpDrawerOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isCheatsheetModalOpen, setIsCheatsheetModalOpen] = useState(false);
@@ -108,7 +110,7 @@ export const TopNavbar: React.FC<Props> = ({
           {/* Right Controls */}
           <div className="flex items-center gap-2">
             {/* User Auth widget */}
-            <UserAuthButton />
+            <UserAuthButton onOpenDatabaseManager={() => setIsDatabaseModalOpen(true)} />
 
             <button
               onClick={toggleTheme}
@@ -156,6 +158,17 @@ export const TopNavbar: React.FC<Props> = ({
             >
               <CircuitBoard className="w-4 h-4 text-cyan-400" />
               <span>Baza Układów Cloud SQL</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setIsDatabaseModalOpen(true);
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-cyan-300 hover:bg-slate-900 rounded-xl font-medium"
+            >
+              <Database className="w-4 h-4 text-cyan-400" />
+              <span>Zarządzaj Bazą Cloud SQL</span>
             </button>
 
             <div className="py-1">
@@ -215,6 +228,13 @@ export const TopNavbar: React.FC<Props> = ({
       <CheatsheetModal
         isOpen={isCheatsheetModalOpen}
         onClose={() => setIsCheatsheetModalOpen(false)}
+      />
+
+      {/* Modal Zarządzania Bazą Danych Cloud SQL */}
+      <DatabaseManagerModal
+        isOpen={isDatabaseModalOpen}
+        onClose={() => setIsDatabaseModalOpen(false)}
+        onDataModified={() => onSelectCircuit(currentCircuitId)}
       />
     </>
   );

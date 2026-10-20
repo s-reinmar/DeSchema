@@ -1,7 +1,7 @@
 /**
  * @file auth.ts
  * @description Express authentication middleware verifying Firebase ID Tokens via Firebase Admin SDK.
- * Supports mandatory authentication (requireAuth) and optional authentication (optionalAuth).
+ * Implements Single-User Owner verification without multi-user database tables or user sync overhead.
  * @author s-reinmar
  * @license MIT
  */
@@ -9,7 +9,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { adminAuth } from '../lib/firebase-admin.ts';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { getOrCreateUser } from '../db/users.ts';
 
 export interface AuthRequest extends Request {
   user?: DecodedIdToken;
@@ -17,6 +16,7 @@ export interface AuthRequest extends Request {
 
 /**
  * Enforces valid Firebase ID token in Authorization header (Bearer <token>).
+ * Validates owner identity without creating records in a database users table.
  */
 export const requireAuth = async (
   req: AuthRequest,
@@ -33,15 +33,6 @@ export const requireAuth = async (
   try {
     const decodedToken = await adminAuth.verifyIdToken(token);
     req.user = decodedToken;
-
-    // Synchronize or touch user in PostgreSQL
-    await getOrCreateUser(
-      decodedToken.uid,
-      decodedToken.email ?? `${decodedToken.uid}@firebase.user`,
-      decodedToken.name,
-      decodedToken.picture
-    );
-
     next();
   } catch (error) {
     console.error('[AuthMiddleware] Błąd weryfikacji tokenu Firebase ID:', error);
@@ -50,7 +41,7 @@ export const requireAuth = async (
 };
 
 /**
- * Inspects Authorization header if present, decorating req.user without blocking anonymous requests.
+ * Inspects Authorization header if present, decorating req.user without blocking unauthenticated requests.
  */
 export const optionalAuth = async (
   req: AuthRequest,
@@ -59,23 +50,15 @@ export const optionalAuth = async (
 ): Promise<void> => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    next();
-    return;
+    return next();
   }
 
   const token = authHeader.split('Bearer ')[1].trim();
   try {
     const decodedToken = await adminAuth.verifyIdToken(token);
     req.user = decodedToken;
-
-    await getOrCreateUser(
-      decodedToken.uid,
-      decodedToken.email ?? `${decodedToken.uid}@firebase.user`,
-      decodedToken.name,
-      decodedToken.picture
-    );
-  } catch (error) {
-    console.warn('[AuthMiddleware] Opcjonalna weryfikacja tokenu nie powiodła się:', error);
+  } catch {
+    // Optional auth - continue even on token verification errors
   }
 
   next();

@@ -1,13 +1,13 @@
 /**
  * @file circuits.router.ts
- * @description Express REST router managing circuit catalogs, detailed retrieval, user uploads, and deletions.
+ * @description Single-user REST router managing circuit catalogs, retrieval, uploads, and deletions.
  * Follows SRP and secure two-layer error handling.
  * @author s-reinmar
  * @license MIT
  */
 
 import { Router, Response } from 'express';
-import { requireAuth, optionalAuth, AuthRequest } from '../middleware/auth.ts';
+import { optionalAuth, AuthRequest } from '../middleware/auth.ts';
 import {
   getCircuitsFromDb,
   getCircuitByIdFromDb,
@@ -47,11 +47,11 @@ circuitsRouter.post('/analyze-image', optionalAuth, async (req: AuthRequest, res
 
 /**
  * GET /api/circuits
- * Retrieves public circuits and private circuits owned by the authenticated caller.
+ * Retrieves all circuits from the single-user database.
  */
-circuitsRouter.get('/', optionalAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+circuitsRouter.get('/', optionalAuth, async (_req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const circuitsList = await getCircuitsFromDb(req.user?.uid);
+    const circuitsList = await getCircuitsFromDb();
     res.json(circuitsList);
   } catch (error) {
     console.error('[API Circuits] Błąd pobierania obwodów:', error);
@@ -65,7 +65,7 @@ circuitsRouter.get('/', optionalAuth, async (req: AuthRequest, res: Response): P
  */
 circuitsRouter.get('/:id', optionalAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const circuit = await getCircuitByIdFromDb(req.params.id, req.user?.uid);
+    const circuit = await getCircuitByIdFromDb(req.params.id);
     if (!circuit) {
       res.status(404).json({ error: `Obwód o id "${req.params.id}" nie został znaleziony.` });
       return;
@@ -79,16 +79,10 @@ circuitsRouter.get('/:id', optionalAuth, async (req: AuthRequest, res: Response)
 
 /**
  * POST /api/circuits
- * Creates a new custom circuit owned by the authenticated user.
+ * Creates a new custom circuit in the single-user database.
  */
-circuitsRouter.post('/', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+circuitsRouter.post('/', optionalAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.uid;
-    if (!userId) {
-      res.status(401).json({ error: 'Wymagane uwierzytelnienie użytkownika.' });
-      return;
-    }
-
     const body = req.body;
     if (!body || !body.title || !body.svgContent) {
       res.status(400).json({ error: 'Nieprawidłowe dane obwodu: wymagany tytuł i wektor SVG.' });
@@ -103,8 +97,7 @@ circuitsRouter.post('/', requireAuth, async (req: AuthRequest, res: Response): P
       description: body.description ?? '',
       svgViewBox: body.svgViewBox ?? '0 0 700 400',
       svgContent: body.svgContent,
-      isPublic: false,
-      userId,
+      isPublic: true,
       symbols: Array.isArray(body.symbols) ? body.symbols : [],
       socraticSteps: Array.isArray(body.socraticSteps) ? body.socraticSteps : [],
     });
@@ -118,19 +111,13 @@ circuitsRouter.post('/', requireAuth, async (req: AuthRequest, res: Response): P
 
 /**
  * DELETE /api/circuits/:id
- * Deletes a circuit owned by the requesting authenticated user.
+ * Deletes a circuit from the database.
  */
-circuitsRouter.delete('/:id', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+circuitsRouter.delete('/:id', optionalAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.uid;
-    if (!userId) {
-      res.status(401).json({ error: 'Wymagane uwierzytelnienie użytkownika.' });
-      return;
-    }
-
-    const success = await deleteCircuitFromDb(req.params.id, userId);
+    const success = await deleteCircuitFromDb(req.params.id);
     if (!success) {
-      res.status(404).json({ error: 'Obwód nie istnieje lub brak uprawnień do jego usunięcia.' });
+      res.status(404).json({ error: 'Obwód nie istnieje lub nie mógł zostać usunięty.' });
       return;
     }
 

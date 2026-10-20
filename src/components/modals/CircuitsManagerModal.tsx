@@ -16,12 +16,10 @@ import {
   Globe,
   Lock,
   Trash2,
-  LogIn,
   Upload,
 } from 'lucide-react';
 import type { Circuit, CircuitSummary } from '../../types/circuit.types.ts';
 import { SymbolParser } from '../../utils/symbol-parser.ts';
-import { useAuth } from '../../context/AuthContext.tsx';
 import { CreateCircuitModal } from './CreateCircuitModal.tsx';
 import { SchematicAiWizardModal } from './SchematicAiWizardModal.tsx';
 
@@ -44,7 +42,6 @@ export const CircuitsManagerModal: React.FC<Props> = ({
   onSaveCustomCircuit,
   onDeleteCircuit,
 }) => {
-  const { user, signInWithGoogle } = useAuth();
   const [activeTab, setActiveTab] = useState<'public' | 'private'>('public');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAiWizardOpen, setIsAiWizardOpen] = useState(false);
@@ -154,7 +151,7 @@ export const CircuitsManagerModal: React.FC<Props> = ({
                 <span>Wgraj Schemat</span>
               </button>
 
-              {user && onSaveCustomCircuit && (
+              {onSaveCustomCircuit && (
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl transition cursor-pointer shadow-xs"
@@ -168,28 +165,9 @@ export const CircuitsManagerModal: React.FC<Props> = ({
 
           {/* Scrollable list */}
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-3.5 no-scrollbar">
-            {activeTab === 'private' && !user ? (
-              <div className="p-8 rounded-2xl border border-slate-800 bg-slate-950/40 text-center flex flex-col items-center justify-center gap-3">
-                <div className="p-3 bg-cyan-950/40 border border-cyan-800/40 rounded-2xl text-cyan-400">
-                  <Lock className="w-8 h-8" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">Wymagane logowanie</h3>
-                  <p className="text-xs text-slate-400 max-w-sm mt-1">
-                    Zaloguj się kontem Google, aby tworzyć, edytować i synchronizować własne obwody w relacyjnej bazie Cloud SQL.
-                  </p>
-                </div>
-                <button
-                  onClick={() => signInWithGoogle()}
-                  className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-gradient-to-r from-cyan-600 to-indigo-600 text-white rounded-xl shadow-md transition cursor-pointer hover:from-cyan-500 hover:to-indigo-500"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>Zaloguj z Google</span>
-                </button>
-              </div>
-            ) : displayedSummaries.length === 0 ? (
+            {displayedSummaries.length === 0 ? (
               <div className="p-8 rounded-2xl border-2 border-dashed border-slate-800 text-center flex flex-col items-center justify-center gap-2">
-                <p className="text-sm text-slate-400 font-medium">Brak własnych obwodów w chmurze.</p>
+                <p className="text-sm text-slate-400 font-medium">Brak obwodów w tej kategorii.</p>
                 <p className="text-xs text-slate-500">Wgraj grafikę ze schematem do analizy AI lub stwórz układ ręcznie.</p>
                 <div className="flex items-center gap-2 mt-2">
                   <button
@@ -199,7 +177,7 @@ export const CircuitsManagerModal: React.FC<Props> = ({
                     <Upload className="w-3.5 h-3.5" />
                     <span>Wgraj Schemat</span>
                   </button>
-                  {user && onSaveCustomCircuit && (
+                  {onSaveCustomCircuit && (
                     <button
                       onClick={() => setIsCreateModalOpen(true)}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition cursor-pointer"

@@ -1,15 +1,17 @@
 /**
  * @file circuits.ts
- * @description Database query layer for electronic circuits, symbols, and socratic steps using Drizzle ORM.
+ * @description Single-user database query layer for electronic circuits, symbols, and socratic steps using Drizzle ORM.
  * Implements type-safe relational querying, sanitization of internal database errors, and atomic transactions.
  * @author s-reinmar
  * @license MIT
  */
 
-import { eq, or, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from './index.ts';
 import { circuits, circuitSymbols, socraticSteps } from './schema.ts';
 import type { Circuit, CircuitSymbol, SocraticStep } from '../types/circuit.types.ts';
+
+const PREDEFINED_IDS = new Set(['half-wave-rectifier', 'npn-common-emitter', 'zener-regulator']);
 
 export interface CreateCircuitInput {
   id: string;
@@ -18,7 +20,6 @@ export interface CreateCircuitInput {
   svgViewBox: string;
   svgContent: string;
   isPublic?: boolean;
-  userId?: string | null;
   symbols: readonly {
     id: string;
     label: string;
@@ -83,24 +84,16 @@ function mapToCircuitDomain(
     svgContent: circuitRow.svgContent,
     symbols,
     socraticSteps: sortedSteps,
-    isCustom: !circuitRow.isPublic,
+    isCustom: !PREDEFINED_IDS.has(circuitRow.id),
   };
 }
 
 /**
- * Retrieves all accessible circuits (all public circuits + private circuits belonging to userId).
+ * Retrieves all circuits from the database.
  */
-export async function getCircuitsFromDb(userId?: string): Promise<Circuit[]> {
+export async function getCircuitsFromDb(): Promise<Circuit[]> {
   try {
-    const whereCondition = userId
-      ? or(eq(circuits.isPublic, true), eq(circuits.userId, userId))
-      : eq(circuits.isPublic, true);
-
-    const circuitRecords = await db
-      .select()
-      .from(circuits)
-      .where(whereCondition);
-
+    const circuitRecords = await db.select().from(circuits);
     if (circuitRecords.length === 0) {
       return [];
     }
@@ -128,9 +121,9 @@ export async function getCircuitsFromDb(userId?: string): Promise<Circuit[]> {
 }
 
 /**
- * Retrieves a single circuit by ID, verifying public visibility or user ownership.
+ * Retrieves a single circuit by ID.
  */
-export async function getCircuitByIdFromDb(id: string, userId?: string): Promise<Circuit | null> {
+export async function getCircuitByIdFromDb(id: string): Promise<Circuit | null> {
   try {
     const records = await db
       .select()
@@ -139,11 +132,6 @@ export async function getCircuitByIdFromDb(id: string, userId?: string): Promise
 
     if (records.length === 0) return null;
     const c = records[0];
-
-    // Access check: circuit must be public or owned by user
-    if (!c.isPublic && (!userId || c.userId !== userId)) {
-      return null;
-    }
 
     const symbols = await db
       .select()
@@ -174,8 +162,7 @@ export async function insertCircuitToDb(input: CreateCircuitInput): Promise<Circ
         description: input.description,
         svgViewBox: input.svgViewBox,
         svgContent: input.svgContent,
-        isPublic: Boolean(input.isPublic),
-        userId: input.userId ?? null,
+        isPublic: Boolean(input.isPublic ?? true),
       });
 
       if (input.symbols && input.symbols.length > 0) {
@@ -223,14 +210,14 @@ export async function insertCircuitToDb(input: CreateCircuitInput): Promise<Circ
 }
 
 /**
- * Deletes a circuit if the requesting user is the owner.
+ * Deletes a circuit from the database.
  */
-export async function deleteCircuitFromDb(id: string, userId: string): Promise<boolean> {
+export async function deleteCircuitFromDb(id: string): Promise<boolean> {
   try {
     const existing = await db
       .select()
       .from(circuits)
-      .where(and(eq(circuits.id, id), eq(circuits.userId, userId)));
+      .where(eq(circuits.id, id));
 
     if (existing.length === 0) {
       return false;

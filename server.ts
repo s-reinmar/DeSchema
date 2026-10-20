@@ -11,6 +11,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import { circuitsRouter } from './src/api/circuits.router.ts';
+import { databaseRouter } from './src/api/database.router.ts';
 import { seedInitialCircuits } from './src/db/seed.ts';
 
 dotenv.config();
@@ -23,6 +24,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json({ limit: '20mb' }));
 app.use('/api/circuits', circuitsRouter);
+app.use('/api/database', databaseRouter);
 
 /**
  * Initializes GoogleGenAI client with the required User-Agent header.

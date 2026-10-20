@@ -1,7 +1,8 @@
 /**
  * @file schema.ts
- * @description Relational schema definitions for Cloud SQL PostgreSQL using Drizzle ORM.
- * Defines users (Firebase Auth linked), circuits (public and private), circuit symbols, and socratic steps.
+ * @description Single-user relational schema for Cloud SQL PostgreSQL using Drizzle ORM.
+ * Defines circuits (vector SVGs), circuit symbols (physics roles & formulas), and socratic steps.
+ * Designed for private single-operator architecture without multi-tenant overhead.
  * @author s-reinmar
  * @license MIT
  */
@@ -20,18 +21,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 /**
- * Users table synchronized from Firebase Authentication via UID.
- */
-export const users = pgTable('users', {
-  uid: text('uid').primaryKey().notNull(),
-  email: text('email').notNull(),
-  displayName: text('display_name'),
-  photoUrl: text('photo_url'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-});
-
-/**
- * Master circuits table supporting both public reference circuits and user-created private circuits.
+ * Master circuits table for the single-user application.
  */
 export const circuits = pgTable('circuits', {
   id: varchar('id', { length: 128 }).primaryKey(),
@@ -39,8 +29,7 @@ export const circuits = pgTable('circuits', {
   description: text('description'),
   svgViewBox: varchar('svg_view_box', { length: 64 }).notNull().default('0 0 700 400'),
   svgContent: text('svg_content').notNull(),
-  isPublic: boolean('is_public').notNull().default(false),
-  userId: text('user_id').references(() => users.uid, { onDelete: 'cascade' }),
+  isPublic: boolean('is_public').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
@@ -82,15 +71,7 @@ export const socraticSteps = pgTable('socratic_steps', {
 /**
  * Relationships definitions for Drizzle relational queries.
  */
-export const usersRelations = relations(users, ({ many }) => ({
-  circuits: many(circuits),
-}));
-
-export const circuitsRelations = relations(circuits, ({ one, many }) => ({
-  author: one(users, {
-    fields: [circuits.userId],
-    references: [users.uid],
-  }),
+export const circuitsRelations = relations(circuits, ({ many }) => ({
   symbols: many(circuitSymbols),
   socraticSteps: many(socraticSteps),
 }));

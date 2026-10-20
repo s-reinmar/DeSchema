@@ -48,7 +48,6 @@ export async function seedInitialCircuits(): Promise<void> {
           svgViewBox: data.svgViewBox,
           svgContent: data.svgContent,
           isPublic: true,
-          userId: null,
           symbols: data.symbols,
           socraticSteps: data.socraticSteps,
         });
