@@ -18,9 +18,12 @@ import {
   Trash2,
   Upload,
   Zap,
+  Search,
 } from 'lucide-react';
-import type { Circuit, CircuitSummary } from '../../types/circuit.types.ts';
+import type { Circuit, CircuitSummary, CircuitCategory } from '../../types/circuit.types.ts';
+import { CIRCUIT_CATEGORIES } from '../../types/circuit.types.ts';
 import { SymbolParser } from '../../utils/symbol-parser.ts';
+import { CircuitSlugGenerator } from '../../services/circuit-slug-generator.service.ts';
 import { CreateCircuitModal } from './CreateCircuitModal.tsx';
 import { SchematicAiWizardModal } from './SchematicAiWizardModal.tsx';
 import { TokenSafeSvgUploadModal } from './TokenSafeSvgUploadModal.tsx';
@@ -45,6 +48,8 @@ export const CircuitsManagerModal: React.FC<Props> = ({
   onDeleteCircuit,
 }) => {
   const [activeTab, setActiveTab] = useState<'public' | 'private'>('public');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Wszystkie');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isTokenSafeModalOpen, setIsTokenSafeModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAiWizardOpen, setIsAiWizardOpen] = useState(false);
@@ -66,7 +71,18 @@ export const CircuitsManagerModal: React.FC<Props> = ({
 
   const publicSummaries = summaries.filter((s) => !s.isCustom);
   const privateSummaries = summaries.filter((s) => s.isCustom);
-  const displayedSummaries = activeTab === 'public' ? publicSummaries : privateSummaries;
+  const baseSummaries = activeTab === 'public' ? publicSummaries : privateSummaries;
+
+  const displayedSummaries = baseSummaries.filter((item) => {
+    const cat = item.category ?? CircuitSlugGenerator.detectCategory(item.title, item.description);
+    if (selectedCategory !== 'Wszystkie' && cat !== selectedCategory) {
+      return false;
+    }
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    const slug = CircuitSlugGenerator.resolveDisplaySlug(item.id, item.title, item.englishSlug).toLowerCase();
+    return item.title.toLowerCase().includes(q) || item.id.toLowerCase().includes(q) || slug.includes(q);
+  });
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -175,6 +191,49 @@ export const CircuitsManagerModal: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* Category Filter and Search Bar */}
+          <div className="px-5 py-2.5 bg-slate-950/60 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
+              {(['Wszystkie', ...CIRCUIT_CATEGORIES] as const).map((cat) => {
+                const isActive = selectedCategory === cat;
+                const count = cat === 'Wszystkie'
+                  ? baseSummaries.length
+                  : baseSummaries.filter((s) => (s.category ?? CircuitSlugGenerator.detectCategory(s.title, s.description)) === cat).length;
+
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-2.5 py-1 rounded-lg font-medium text-xs transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                      isActive
+                        ? 'bg-cyan-500 text-slate-950 font-bold shadow-xs'
+                        : 'bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    }`}
+                  >
+                    <span>{cat}</span>
+                    <span className={`text-[10px] font-mono px-1 rounded ${
+                      isActive ? 'bg-slate-950/20 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="relative shrink-0">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filtruj schematy..."
+                className="pl-7 pr-2.5 py-1 text-xs rounded-lg border border-slate-800 bg-slate-950 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 w-full sm:w-44 transition"
+              />
+            </div>
+          </div>
+
           {/* Scrollable list */}
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-3.5 no-scrollbar">
             {displayedSummaries.length === 0 ? (
@@ -219,19 +278,35 @@ export const CircuitsManagerModal: React.FC<Props> = ({
                       }`}
                     >
                       <div className="space-y-1 flex-1">
-                        <div className="flex items-center gap-2">
-                          <Layers className="w-4 h-4 text-cyan-400" />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Layers className="w-4 h-4 text-cyan-400 shrink-0" />
                           <h3 className="font-bold text-sm text-white">
                             {SymbolParser.formatSymbol(item.title)}
                           </h3>
+
+                          {/* Kategoria schematu */}
+                          <span className="text-[11px] text-slate-400 font-medium shrink-0">
+                            {item.category ?? CircuitSlugGenerator.detectCategory(item.title, item.description)}
+                          </span>
+
+                          <span className="text-slate-600 select-none text-xs" aria-hidden="true">·</span>
+
+                          {/* Krótka nazwa po angielsku w niebieskim polu (slug) */}
+                          <span
+                            className="font-mono text-[10px] text-cyan-300 px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/25 shrink-0"
+                            title={`Identyfikator schematu: ${item.id}`}
+                          >
+                            {CircuitSlugGenerator.resolveDisplaySlug(item.id, item.title, item.englishSlug)}
+                          </span>
+
                           {isActive && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/40">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/40 shrink-0">
                               <Check className="w-3 h-3" />
                               Aktywny
                             </span>
                           )}
                           {item.isCustom && (
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0">
                               Prywatny
                             </span>
                           )}

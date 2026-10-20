@@ -16,6 +16,7 @@ import { seedInitialCircuits } from '../db/seed.ts';
 import { optionalAuth, AuthRequest } from '../middleware/auth.ts';
 import type { DatabaseStats, CircuitVectorItem } from '../interfaces/database-manager.interface.ts';
 import type { Circuit } from '../types/circuit.types.ts';
+import { CircuitSlugGenerator } from '../services/circuit-slug-generator.service.ts';
 
 export const databaseRouter = Router();
 
@@ -214,6 +215,8 @@ databaseRouter.get('/circuits-preview', optionalAuth, async (_req: AuthRequest, 
         description: c.description ?? undefined,
         svgViewBox: c.svgViewBox,
         svgContent: c.svgContent,
+        category: CircuitSlugGenerator.detectCategory(c.title, c.description ?? undefined),
+        englishSlug: CircuitSlugGenerator.resolveDisplaySlug(c.id, c.title),
         symbols: symbols.map((s) => ({
           id: s.id,
           label: s.label,
@@ -253,6 +256,8 @@ databaseRouter.get('/circuits-preview', optionalAuth, async (_req: AuthRequest, 
             description: data.description,
             svgViewBox: data.svgViewBox,
             svgContent: data.svgContent,
+            category: data.category ?? CircuitSlugGenerator.detectCategory(data.title, data.description),
+            englishSlug: data.englishSlug ?? CircuitSlugGenerator.resolveDisplaySlug(data.id, data.title),
             symbols: (data.symbols || []).map((s) => ({
               id: s.id,
               label: s.label,

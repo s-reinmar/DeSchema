@@ -21,7 +21,9 @@ import {
 } from 'lucide-react';
 import { svgTokenOptimizer } from '../../services/svg-token-optimizer.service.ts';
 import type { OptimizedSvgResult } from '../../interfaces/svg-token-optimizer.interface.ts';
-import type { Circuit } from '../../types/circuit.types.ts';
+import type { Circuit, CircuitCategory } from '../../types/circuit.types.ts';
+import { CIRCUIT_CATEGORIES } from '../../types/circuit.types.ts';
+import { CircuitSlugGenerator } from '../../services/circuit-slug-generator.service.ts';
 
 interface Props {
   readonly isOpen: boolean;

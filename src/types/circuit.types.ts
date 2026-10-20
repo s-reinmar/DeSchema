@@ -1,9 +1,26 @@
 /**
  * @file circuit.types.ts
  * @description Domain types and data models for DeSchema Mentor circuits, symbol physics, and socratic steps.
+ * Includes taxonomy categories and English semantic slugs.
  * @author s-reinmar
  * @license MIT
  */
+
+/**
+ * 4 canonical categories of electronic circuits.
+ */
+export type CircuitCategory =
+  | 'Zasilacze'
+  | 'Wzmacniacze'
+  | 'Technika w.cz. i filtry'
+  | 'Układy cyfrowe';
+
+export const CIRCUIT_CATEGORIES: readonly CircuitCategory[] = [
+  'Zasilacze',
+  'Wzmacniacze',
+  'Technika w.cz. i filtry',
+  'Układy cyfrowe',
+] as const;
 
 /**
  * Represents a discrete electrical/electronic symbol with educational metadata, physics, and design formulas.
@@ -45,6 +62,8 @@ export interface Circuit {
   readonly symbols: readonly CircuitSymbol[];
   readonly socraticSteps: readonly SocraticStep[];
   readonly isCustom?: boolean;
+  readonly category?: CircuitCategory;
+  readonly englishSlug?: string;
 }
 
 /**
@@ -55,6 +74,8 @@ export interface CircuitSummary {
   readonly title: string;
   readonly description?: string;
   readonly isCustom: boolean;
+  readonly category?: CircuitCategory;
+  readonly englishSlug?: string;
 }
 
 /**

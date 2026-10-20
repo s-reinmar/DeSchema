@@ -38,6 +38,8 @@ export interface CircuitPreviewStep {
   readonly promptQuestion: string;
 }
 
+import type { CircuitCategory } from '../types/circuit.types.ts';
+
 export interface CircuitVectorItem {
   readonly id: string;
   readonly title: string;
@@ -46,6 +48,8 @@ export interface CircuitVectorItem {
   readonly svgContent: string;
   readonly symbols: readonly CircuitPreviewSymbol[];
   readonly socraticSteps: readonly CircuitPreviewStep[];
+  readonly category?: CircuitCategory;
+  readonly englishSlug?: string;
   readonly createdAt?: string;
 }
 

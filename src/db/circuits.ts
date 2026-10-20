@@ -9,7 +9,8 @@
 import { eq } from 'drizzle-orm';
 import { db } from './index.ts';
 import { circuits, circuitSymbols, socraticSteps } from './schema.ts';
-import type { Circuit, CircuitSymbol, SocraticStep } from '../types/circuit.types.ts';
+import type { Circuit, CircuitSymbol, SocraticStep, CircuitCategory } from '../types/circuit.types.ts';
+import { CircuitSlugGenerator } from '../services/circuit-slug-generator.service.ts';
 
 const PREDEFINED_IDS = new Set(['half-wave-rectifier', 'npn-common-emitter', 'zener-regulator']);
 
@@ -20,6 +21,8 @@ export interface CreateCircuitInput {
   svgViewBox: string;
   svgContent: string;
   isPublic?: boolean;
+  category?: CircuitCategory;
+  englishSlug?: string;
   symbols: readonly {
     id: string;
     label: string;
@@ -85,6 +88,8 @@ function mapToCircuitDomain(
     symbols,
     socraticSteps: sortedSteps,
     isCustom: !PREDEFINED_IDS.has(circuitRow.id),
+    category: CircuitSlugGenerator.detectCategory(circuitRow.title, circuitRow.description ?? ''),
+    englishSlug: CircuitSlugGenerator.resolveDisplaySlug(circuitRow.id, circuitRow.title),
   };
 }
 

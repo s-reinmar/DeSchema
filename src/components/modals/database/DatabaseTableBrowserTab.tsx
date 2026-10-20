@@ -7,10 +7,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Search, Image, RefreshCw } from 'lucide-react';
+import { Search, Image, RefreshCw, Filter } from 'lucide-react';
 import type { CircuitVectorItem } from '../../../interfaces/database-manager.interface.ts';
 import { databaseManagerClient } from '../../../services/database-manager-client.service.ts';
 import { CircuitAccordionItem } from './CircuitAccordionItem.tsx';
+import { CircuitSlugGenerator } from '../../../services/circuit-slug-generator.service.ts';
+
+const CATEGORIES = [
+  'Wszystkie',
+  'Zasilacze',
+  'Wzmacniacze',
+  'Technika w.cz. i filtry',
+  'Układy cyfrowe',
+] as const;
 
 interface Props {
   readonly idToken?: string | null;
@@ -21,6 +30,7 @@ export const DatabaseTableBrowserTab: React.FC<Props> = ({ idToken, onDataModifi
   const [circuits, setCircuits] = useState<readonly CircuitVectorItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Wszystkie');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -83,13 +93,22 @@ export const DatabaseTableBrowserTab: React.FC<Props> = ({ idToken, onDataModifi
   };
 
   const filteredCircuits = circuits.filter((c) => {
+    const cat = c.category ?? CircuitSlugGenerator.detectCategory(c.title, c.description);
+    if (selectedCategory !== 'Wszystkie' && cat !== selectedCategory) {
+      return false;
+    }
     const q = search.toLowerCase();
-    return c.title.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
+    const slug = CircuitSlugGenerator.resolveDisplaySlug(c.id, c.title, c.englishSlug).toLowerCase();
+    return (
+      c.title.toLowerCase().includes(q) ||
+      c.id.toLowerCase().includes(q) ||
+      slug.includes(q)
+    );
   });
 
   return (
-    <div className="space-y-4">
-      {/* Compact Top Bar: Search and Count to maximize content visibility */}
+    <div className="space-y-3.5">
+      {/* Compact Top Bar: Search and Count */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-900/50 rounded-xl border border-slate-800">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/25 text-cyan-400">
@@ -115,6 +134,36 @@ export const DatabaseTableBrowserTab: React.FC<Props> = ({ idToken, onDataModifi
             className="pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-800 bg-slate-950 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 w-full sm:w-64 transition"
           />
         </div>
+      </div>
+
+      {/* Segmented Category Filter Bar */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+        {CATEGORIES.map((cat) => {
+          const isActive = selectedCategory === cat;
+          const count = cat === 'Wszystkie'
+            ? circuits.length
+            : circuits.filter((c) => (c.category ?? CircuitSlugGenerator.detectCategory(c.title, c.description)) === cat).length;
+
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer shrink-0 flex items-center gap-1.5 text-xs ${
+                isActive
+                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                  : 'bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800/80'
+              }`}
+            >
+              <span>{cat}</span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md ${
+                isActive ? 'bg-slate-950/30 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Accordion Circuits List */}

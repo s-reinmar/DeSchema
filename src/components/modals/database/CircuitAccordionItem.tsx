@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { CircuitVectorItem } from '../../../interfaces/database-manager.interface.ts';
 import { SymbolParser } from '../../../utils/symbol-parser.ts';
+import { CircuitSlugGenerator } from '../../../services/circuit-slug-generator.service.ts';
 
 export interface CircuitAccordionItemProps {
   readonly circuit: CircuitVectorItem;
@@ -40,6 +41,9 @@ export const CircuitAccordionItem: React.FC<CircuitAccordionItemProps> = ({
   onDownload,
   onDelete,
 }) => {
+  const displayCategory = circuit.category ?? CircuitSlugGenerator.detectCategory(circuit.title, circuit.description);
+  const displaySlug = CircuitSlugGenerator.resolveDisplaySlug(circuit.id, circuit.title, circuit.englishSlug);
+
   return (
     <div
       className={`rounded-xl border transition-all duration-200 overflow-hidden ${
@@ -80,8 +84,18 @@ export const CircuitAccordionItem: React.FC<CircuitAccordionItemProps> = ({
               {SymbolParser.formatSymbol(circuit.title)}
             </h5>
 
-            <span className="font-mono text-[10px] text-cyan-300 px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/25 shrink-0">
-              {circuit.id}
+            <span className="text-[11px] text-slate-400 font-medium shrink-0">
+              {displayCategory}
+            </span>
+
+            <span className="text-slate-600 select-none text-xs" aria-hidden="true">·</span>
+
+            {/* Krótka nazwa po angielsku w niebieskim polu (slug) */}
+            <span
+              className="font-mono text-[10px] text-cyan-300 px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/25 shrink-0"
+              title={`Identyfikator schematu: ${circuit.id}`}
+            >
+              {displaySlug}
             </span>
 
             <span className="hidden md:inline-flex items-center gap-1 text-[11px] text-slate-400 bg-slate-800/60 px-2 py-0.5 rounded-md shrink-0">

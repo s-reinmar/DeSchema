@@ -1,97 +1,69 @@
-# Generator Układów i Zadań Sokratejskich z Obrazów (Multimodal AI)
+# Plan Implementacji: Kategorie Schematów Elektrycznych oraz Angielski Slug (Krótka Nazwa)
 
-Automatyczne przekształcanie zdjęć, skanów i zrzutów ekranu schematów elektronicznych w interaktywne układy wektorowe SVG z 4-etapowymi pytaniami dydaktycznymi, punktami pomiarowymi oraz bezpośrednim zapisem w relacyjnej bazie Cloud SQL PostgreSQL.
-
-> [!IMPORTANT]
-> **Potwierdzone decyzje architektoniczne:**
-> - **Źródło obrazu**: Przesyłanie plików graficznych (PNG, JPG, WebP) poprzez Drag & Drop, przeglądarkę plików oraz natywne wklejanie ze schowka systemowego (`Ctrl+V` / `Cmd+V`).
-> - **Silnik wektorowy**: Serwerowa analiza multimodalna przez `@google/genai` (`gemini-3.8-flash`) generująca znormalizowany kod wektorowy SVG dopasowany do stylistyki DeSchema (`viewBox="0 0 700 400"`), pozycje komponentów oraz współrzędne punktów pomiarowych.
-> - **Przepływ pracy**: 3-krokowy kreator (Upload & Analiza → Interaktywny Podgląd i Edycja → Zapis do Cloud SQL jako układ publiczny lub prywatny).
+Zgłoszenie użytkownika dotyczy wprowadzenia 4 taksonomicznych kategorii schematów elektrycznych, paska filtrowania na górze widoku, etykiet kategorii przy każdym schemacie oraz automatycznego generowania i edycji zwięzłych angielskich identyfikatorów/nazw (slug) w niebieskim polu (zamiast technicznych kodów typu `ai-gen-1792400984372`).
 
 ---
 
-## 1. Przegląd i Koncepcja Biznesowa
+## 1. Wybrane Założenia & Odpowiedzi Użytkownika
 
-- **Dla kogo**: Nauczyciele elektroniki, studenci, inżynierowie i pasjonaci tworzący interaktywne materiały dydaktyczne.
-- **Problem**: Ręczne przepisywanie schematów z podręczników lub zrzutów do JSON i ręczne kodowanie współrzędnych SVG oraz pytań testowych było czasochłonne i żmudne.
-- **Rozwiązanie**: Wystarczy wkleić zdjęcie schematu z podręcznika lub zrzut ekranu z symulatora (np. LTspice, Falstad, schemat z tablicy). Model Gemini analizuje topologię obwodu, generuje czysty wektor SVG zgodny z systemem punktów kontrolnych aplikacji, ekstrahuje elementy składowe oraz formułuje 4 pytania w metodyce sokratejskiej (od identyfikacji topologii, przez punkty pomiarowe, po diagnozę stanów awaryjnych).
-
----
-
-## 2. Architektura Interfejsu i Doświadczenie Użytkownika (UX)
-
-### Kluczowe Etapy Kreatora (Modal Wizard)
-1. **Krok 1: Wprowadzenie obrazu (Dropzone & Paste Zone)**:
-   - Duży, estetyczny obszar przeciągania plików z natywnym nasłuchem zdarzenia `paste` na oknie (wklejenie bezpośrednio ze schowka).
-   - Opcjonalne pole na wskazówki dydaktyczne (np. "Skup się na filtrze dolnoprzepustowym", "Oblicz napięcie na diodzie Zenera").
-   - Natychmiastowy miniaturowy podgląd załadowanego zdjęcia z możliwością wymiany.
-   - Pasek postępu analizy multimodalnej (ekstrakcja topologii $\to$ generowanie SVG $\to$ tworzenie pytań sokratejskich).
-
-2. **Krok 2: Interaktywna Weryfikacja i Edycja (Split View)**:
-   - **Lewa strona (Wizualizacja SVG)**: Interaktywne płótno SVG z podświetlaniem wygenerowanych węzłów i punktów pomiarowych (np. TP1, TP2, IN, OUT). Możliwość przełączania między wygenerowanym SVG a oryginalnym zdjęciem referencyjnym.
-   - **Prawa strona (Edytor Dydaktyczny)**:
-     - Formularz metadanych: Tytuł, Kategoria (`Prostowniki`, `Wzmacniacze`, `Filtry`, etc.), Poziom trudności.
-     - 4 pytania sokratejskie: Edytowalne pola pytania, warianty odpowiedzi A/B/C/D, wskaźnik poprawnej odpowiedzi oraz wyjaśnienie dydaktyczne.
-     - Lista symboli elektronicznych (identyfikator, wartość, typ).
-
-3. **Krok 3: Publikacja i Persystencja**:
-   - Wybór docelowej lokalizacji: Zapis do własnego katalogu prywatnego (Cloud SQL) lub katalogu publicznego (jeśli uprawniony).
-   - Natychmiastowe załadowanie nowego obwodu na stół roboczy aplikacji bez przeładowywania strony.
+1. **Zestaw kategorii schematów:**
+   - `Zasilacze` (prostowniki, regulatory, stabilizatory napięcia, filtry pojemnościowe)
+   - `Wzmacniacze` (stopnie OE, OB, OC, wzmacniacze operacyjne, stopnie mocy)
+   - `Technika w.cz. i filtry` (wzmacniacze VHF/UHF, filtry LC/RC, obwody rezonansowe, mieszacze)
+   - `Układy cyfrowe` (bramki logiczne, przerzutniki, liczniki, generatory zegarowe)
+   - Domyślny filtr w widokach: `Wszystkie`
+2. **Krótka nazwa po angielsku (slug w niebieskim polu):**
+   - Zastąpienie losowych/liczbowych ID (np. `ai-gen-1792400984372`, `custom-1729...`) czytelnym, zwięzłym angielskim slugiem (np. `vhf-common-base-preamp`, `zener-regulator`, `half-wave-rectifier`, `npn-common-emitter`).
+   - Wdrożenie bezstanowego modułu `CircuitSlugGenerator` generującego automatycznie angielski slug na podstawie polskiego tytułu/opisu oraz umożliwiającego ręczną edycję w modalach zapisu (`TokenSafeSvgUploadModal`, `CreateCircuitModal`, `SchematicEditorStage`).
+3. **Prezentacja w interfejsie:**
+   - Dyskretny, segmentowy pasek filtrów kategorii na górze listy w Eksploratorze bazy danych (`DatabaseTableBrowserTab.tsx`) oraz w katalogu układów (`CircuitsManagerModal.tsx`).
+   - Elegancka, tekstowa etykieta kategorii przy każdym schemacie (zgodnie z zasadą *Zero-Pill Discipline* z `frontend-design`: czysty, nieopakowany tekst z separatorem typograficznym `·`).
 
 ---
 
-## 3. Schemat Przepływu Danych i Komponentów
+## 2. Architektura i SOLID / DDD
 
-```
-┌────────────────────────────────────────────────────────┐
-│                   Klient (React)                       │
-│  [Paste/Upload Modal] ──(Base64 Image + Prompt)──────┐ │
-│         ▲                                            │ │
-│         │ (Podgląd SVG + 4 pytania do edycji)        │ │
-│  [SchematicStudioWizard]                             │ │
-│         │ (Zatwierdzony Circuit Document)            │ │
-│         ▼                                            │ │
-└─────────┼────────────────────────────────────────────┼─┘
-          │ POST /api/circuits/analyze-image           │ POST /api/circuits
-          ▼                                            ▼
-┌────────────────────────────────────────────────────────┐
-│               Backend Express (server.ts)              │
-│  ┌───────────────────────┐   ┌───────────────────────┐ │
-│  │ Gemini 3.8 Flash      │   │ Drizzle ORM           │ │
-│  │ Multimodal Analysis   │   │ Cloud SQL PostgreSQL  │ │
-│  │ JSON Structured Output│   │ Transactional Insert  │ │
-│  └───────────────────────┘   └───────────────────────┘ │
-└────────────────────────────────────────────────────────┘
-```
+### A. Nowe i Zmodyfikowane Kontrakty (`src/types/circuit.types.ts`, `src/interfaces/database-manager.interface.ts`)
+- `CircuitCategory`: unia typów `'Zasilacze' | 'Wzmacniacze' | 'Technika w.cz. i filtry' | 'Układy cyfrowe'`.
+- Rozszerzenie interfejsu `Circuit`:
+  - `category?: CircuitCategory;`
+  - `englishSlug?: string;`
+- Rozszerzenie interfejsu `CircuitVectorItem`:
+  - `category?: CircuitCategory;`
+  - `englishSlug?: string;`
 
----
+### B. Serwis Domenowy: `CircuitSlugGenerator` (`src/services/circuit-slug-generator.service.ts`)
+- Odpowiedzialność (SRP):
+  - Automatyczne tłumaczenie i mapowanie kluczowych pojęć elektrotechnicznych na zwięzłe angielskie terminy (np. *wzmacniacz* -> *amplifier/preamp*, *prostownik* -> *rectifier*, *stabilizator* -> *regulator*, *wspólna baza* -> *common-base*, *filtr* -> *filter*).
+  - Sanitizacja ciągu do bezpiecznego formatu kebab-case (`[a-z0-9-]+`, max 35 znaków).
+  - Automatyczna detekcja sugerowanej kategorii na podstawie słów kluczowych w tytule/opisie schematu.
 
-## 4. Specyfikacja Techniczna i Kontrakty
+### C. Aktualizacja Wzorcowych Schematów (`public/resources/` i `src/db/seed.ts`)
+- Przypisanie jednoznacznych kategorii oraz zweryfikowanie angielskich slugów:
+  - `half-wave-rectifier`: kategoria `Zasilacze`
+  - `npn-common-emitter`: kategoria `Wzmacniacze`
+  - `zener-regulator`: kategoria `Zasilacze`
+  - Wygenerowane lub customowe schematy: automatyczna klasyfikacja do odpowiedniej kategorii (np. układ ze screena: `Technika w.cz. i filtry`, slug: `vhf-common-base-preamp`).
 
-### Endpoint Backendowy: `POST /api/circuits/analyze-image`
-- **Model**: `gemini-3.8-flash`
-- **System Instruction**: Ścisłe wytyczne dotyczące generowania wektora SVG (linie siatki, standardowe symbole IEC/ANSI diody, rezystora, kondensatora, tranzystora, źródła zasilania, masy, etykiety `text`, punkty pomiarowe z klasą `checkpoint-node`).
-- **Response Schema (`Type.OBJECT`)**:
-  - `title`: string
-  - `description`: string
-  - `category`: string
-  - `difficulty`: enum (`Podstawowy`, `Średni`, `Zaawansowany`)
-  - `svgContent`: string (czysty kod węzłów `<g>` i `<path>` wewnątrz viewBox 0 0 700 400)
-  - `symbols`: tablica `{ id, type, label, value, x, y }`
-  - `socraticSteps`: dokładnie 4 obiekty `{ stage, stageName, question, options, correctAnswerIndex, explanation, hint, targetPoint }`
-
-### Integracja z Interfejsem Użytkownika
-- Przycisk **"Generuj z Obrazu (AI)"** zintegrowany w `TopNavbar` oraz wewnątrz katalogu `CircuitsManagerModal`.
-- Dostępny w trybie ciemnym i jasnym, zgodny z zasadą Zero-Pill oraz wytycznymi WCAG.
+### D. Komponenty Prezentacyjne i Filtrowanie
+1. **`DatabaseTableBrowserTab.tsx` (Eksplorator schematów SVG):**
+   - Dodanie interaktywnego paska segmentów kategorii: `Wszystkie`, `Zasilacze`, `Wzmacniacze`, `Technika w.cz. i filtry`, `Układy cyfrowe`.
+   - Filtrowanie listy schematów na żywo w pamięci z zachowaniem aktywnego pola wyszukiwarki.
+   - Wyświetlenie w nagłówku akordeonu czystej etykiety kategorii obok tytułu oraz angielskiego sluga w niebieskim badge'u.
+2. **`CircuitAccordionItem.tsx`:**
+   - Wyświetlanie `circuit.englishSlug || circuit.id` w niebieskim polu (zabezpieczenie przed wyświetlaniem długich technicznych identyfikatorów).
+   - Dyskretny separator i nazwa kategorii przed slugiem.
+3. **Modale Uploadu i Tworzenia (`TokenSafeSvgUploadModal.tsx`, `CreateCircuitModal.tsx`, `SchematicEditorStage.tsx`):**
+   - Pole wyboru kategorii (Dropdown/Segmented select z 4 opcjami).
+   - Pole zwięzłego angielskiego sluga (`Krótka nazwa po angielsku (slug)`), wypełniane automatycznie w czasie rzeczywistym z tytułu, z możliwością pełnej edycji przez użytkownika.
 
 ---
 
-## 5. Plan Wdrożenia
+## 3. Plan Weryfikacji i Bezpieczeństwo
 
-1. **Serwis Backendowy Gemini**: Dodanie dedykowanej trasy analizy multimodalnej w `src/api/circuits.router.ts` z walidacją rozmiaru obrazu i ustrukturyzowanym schematem JSON.
-2. **Warstwa Domenowa (TypeScript)**: Dodanie interfejsów kreatora i walidatorów w `src/interfaces/circuit-generator.interface.ts`.
-3. **Komponenty Interfejsu**:
-   - `SchematicUploadZone`: Obsługa Drag&Drop oraz zdarzenia `onPaste` ze schowka.
-   - `SchematicAiWizardModal`: 3-krokowy kreator z podglądem SVG, edytorem pytań i punktów kontrolnych.
-4. **Podpięcie do Menu i Repozytorium**: Integracja z `TopNavbar` oraz `CircuitRepository` do bezpośredniego zapisu w bazie Cloud SQL.
-5. **Weryfikacja**: Test kompilacji TypeScript, weryfikacja obsługi błędów oraz testy responsywności w obu motywach (jasny/ciemny).
+1. **Weryfikacja Kompilacji:** Uruchomienie `compile_applet` i `lint_applet` (brak błędów typowania, brak typu `any`).
+2. **Test Wizualny i Spójność:**
+   - Weryfikacja wyświetlania schematu ze screena użytkownika: zamiast `ai-gen-1792400984372` pojawi się czytelny angielski slug (np. `vhf-common-base-preamp`) oraz kategoria `Technika w.cz. i filtry`.
+   - Weryfikacja działania paska filtrów: kliknięcie `Wzmacniacze` wyświetla wyłącznie wzmacniacze, `Zasilacze` filtruje prostowniki i stabilizatory.
+   - Weryfikacja dodawania nowego układu przez Token-Safe upload: podgląd sugerowanej kategorii i generowanego sluga.
+3. **Dokumentacja:** Utworzenie szczegółowego raportu w `docs/changes/circuit-categories-and-english-slugs.md`.

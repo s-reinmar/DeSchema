@@ -10,6 +10,7 @@ import type { Circuit, CircuitSummary, ValidationResult } from '../types/circuit
 import type { ICircuitRepository } from '../interfaces/circuit-repository.interface.ts';
 import type { IStorageService } from '../interfaces/storage.interface.ts';
 import { CircuitValidator } from './circuit-validator.ts';
+import { CircuitSlugGenerator } from './circuit-slug-generator.service.ts';
 import { PREDEFINED_RESOURCE_FILES, PREDEFINED_CIRCUITS_META } from '../data/predefined-circuits.ts';
 
 const CUSTOM_CIRCUITS_STORAGE_KEY = 'deschema_mentor_custom_circuits';
@@ -84,12 +85,16 @@ export class CircuitRepository implements ICircuitRepository {
             title: c.title,
             description: c.description,
             isCustom: false,
+            category: c.category ?? CircuitSlugGenerator.detectCategory(c.title, c.description),
+            englishSlug: c.englishSlug ?? CircuitSlugGenerator.resolveDisplaySlug(c.id, c.title),
           }))
         : PREDEFINED_CIRCUITS_META.map((meta) => ({
             id: meta.id,
             title: meta.title,
             description: undefined,
             isCustom: false,
+            category: meta.category,
+            englishSlug: meta.englishSlug,
           }));
 
     const customSummaries = Array.from(this.customMap.values()).map((c) => ({
@@ -97,6 +102,8 @@ export class CircuitRepository implements ICircuitRepository {
       title: c.title,
       description: c.description,
       isCustom: true,
+      category: c.category ?? CircuitSlugGenerator.detectCategory(c.title, c.description),
+      englishSlug: c.englishSlug ?? CircuitSlugGenerator.resolveDisplaySlug(c.id, c.title),
     }));
 
     return [...predefinedSummaries, ...customSummaries];
