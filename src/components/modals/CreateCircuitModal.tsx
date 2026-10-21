@@ -8,8 +8,10 @@
 
 import React, { useState } from 'react';
 import { X, Save, AlertCircle, Eye, Sparkles, Zap, CheckCircle2 } from 'lucide-react';
-import type { Circuit } from '../../types/circuit.types.ts';
+import type { Circuit, CircuitCategory } from '../../types/circuit.types.ts';
+import { CIRCUIT_CATEGORIES } from '../../types/circuit.types.ts';
 import { svgTokenOptimizer } from '../../services/svg-token-optimizer.service.ts';
+import { CircuitSlugGenerator } from '../../services/circuit-slug-generator.service.ts';
 
 interface Props {
   readonly isOpen: boolean;
@@ -20,6 +22,10 @@ interface Props {
 export const CreateCircuitModal: React.FC<Props> = ({ isOpen, onClose, onSaveCircuit }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<CircuitCategory>('Zasilacze');
+  const [hasUserSelectedCategory, setHasUserSelectedCategory] = useState(false);
+  const [englishSlug, setEnglishSlug] = useState('');
+  const [isCustomSlug, setIsCustomSlug] = useState(false);
   const [svgViewBox, setSvgViewBox] = useState('0 0 700 400');
   const [svgContent, setSvgContent] = useState(
     `<g class="circuit-layer">\n  <rect x="20" y="20" width="660" height="360" rx="8" fill="none" stroke="currentColor" stroke-dasharray="4 4" stroke-opacity="0.2"/>\n  <circle cx="150" cy="200" r="30" fill="none" stroke="currentColor" stroke-width="2"/>\n  <text x="150" y="205" text-anchor="middle" fill="currentColor" font-size="14">V1</text>\n  <line x1="180" y1="200" x2="350" y2="200" stroke="currentColor" stroke-width="2"/>\n  <rect x="350" y="185" width="60" height="30" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="2"/>\n  <text x="380" y="205" text-anchor="middle" fill="currentColor" font-size="13">R1</text>\n  <line x1="410" y1="200" x2="550" y2="200" stroke="currentColor" stroke-width="2"/>\n</g>`
@@ -27,6 +33,16 @@ export const CreateCircuitModal: React.FC<Props> = ({ isOpen, onClose, onSaveCir
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [optimizationNote, setOptimizationNote] = useState<string | null>(null);
+
+  const handleTitleChange = (newTitle: string) => {
+    setTitle(newTitle);
+    if (!hasUserSelectedCategory) {
+      setCategory(CircuitSlugGenerator.detectCategory(newTitle, description));
+    }
+    if (!isCustomSlug) {
+      setEnglishSlug(CircuitSlugGenerator.generateEnglishSlug(newTitle));
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -58,11 +74,14 @@ export const CreateCircuitModal: React.FC<Props> = ({ isOpen, onClose, onSaveCir
     setIsSubmitting(true);
 
     try {
-      const generatedId = `custom-${Date.now()}`;
+      const resolvedSlug = CircuitSlugGenerator.generateEnglishSlug(title, englishSlug);
+      const generatedId = resolvedSlug || `custom-${Date.now()}`;
       const newCircuit: Circuit = {
         id: generatedId,
         title: title.trim(),
         description: description.trim(),
+        category,
+        englishSlug: resolvedSlug,
         svgViewBox: svgViewBox.trim() || '0 0 700 400',
         svgContent: svgContent.trim(),
         isCustom: true,
@@ -137,18 +156,66 @@ export const CreateCircuitModal: React.FC<Props> = ({ isOpen, onClose, onSaveCir
             </div>
           )}
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Tytuł obwodu *
+              </label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                placeholder="np. Mostek Graetza z filtrem wygładzającym"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs text-white placeholder-slate-500 outline-none transition"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Kategoria schematu *
+              </label>
+              <select
+                value={category}
+                onChange={(e) => {
+                  setCategory(e.target.value as CircuitCategory);
+                  setHasUserSelectedCategory(true);
+                }}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs text-white outline-none transition cursor-pointer"
+              >
+                {CIRCUIT_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Tytuł obwodu *
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-slate-300">
+                Krótka nazwa po angielsku (slug) *
+              </label>
+              {englishSlug && (
+                <span className="font-mono text-[10px] text-cyan-300 px-1.5 py-0.2 rounded bg-cyan-500/10 border border-cyan-500/25">
+                  {CircuitSlugGenerator.sanitizeToKebabCase(englishSlug)}
+                </span>
+              )}
+            </div>
             <input
               type="text"
               required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="np. Mostek Graetza z filtrem wygładzającym"
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs text-white placeholder-slate-500 outline-none transition"
+              value={englishSlug}
+              onChange={(e) => {
+                setEnglishSlug(e.target.value);
+                setIsCustomSlug(true);
+              }}
+              placeholder="np. graetz-bridge-filter"
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs font-mono text-cyan-300 placeholder-slate-600 outline-none transition"
             />
+            <p className="text-[10px] text-slate-500 mt-1">
+              Automatyczny angielski identyfikator (wyświetlany w niebieskim polu w spisie).
+            </p>
           </div>
 
           <div>

@@ -9,7 +9,9 @@
 import React, { useState } from 'react';
 import { Eye, HelpCircle, Cpu, Check, AlertCircle, Layers } from 'lucide-react';
 import type { CircuitAnalysisResult } from '../../../interfaces/circuit-analyzer.interface.ts';
-import type { Circuit, SocraticStep, CircuitSymbol } from '../../../types/circuit.types.ts';
+import type { Circuit, SocraticStep, CircuitSymbol, CircuitCategory } from '../../../types/circuit.types.ts';
+import { CIRCUIT_CATEGORIES } from '../../../types/circuit.types.ts';
+import { CircuitSlugGenerator } from '../../../services/circuit-slug-generator.service.ts';
 
 interface Props {
   readonly initialData: CircuitAnalysisResult;
@@ -29,12 +31,30 @@ export const SchematicEditorStage: React.FC<Props> = ({
   const [activeTab, setActiveTab] = useState<'preview' | 'questions' | 'symbols' | 'svgSource'>('preview');
   const [title, setTitle] = useState(initialData.title);
   const [description, setDescription] = useState(initialData.description);
+  const [category, setCategory] = useState<CircuitCategory>(() =>
+    CircuitSlugGenerator.detectCategory(initialData.title, initialData.description)
+  );
+  const [hasUserSelectedCategory, setHasUserSelectedCategory] = useState(false);
+  const [englishSlug, setEnglishSlug] = useState(() =>
+    CircuitSlugGenerator.generateEnglishSlug(initialData.title)
+  );
+  const [isCustomSlug, setIsCustomSlug] = useState(false);
   const [svgViewBox, setSvgViewBox] = useState(initialData.svgViewBox || '0 0 700 400');
   const [svgContent, setSvgContent] = useState(initialData.svgContent);
   const [steps, setSteps] = useState<SocraticStep[]>([...initialData.socraticSteps]);
   const [symbols, setSymbols] = useState<CircuitSymbol[]>([...initialData.symbols]);
   const [previewMode, setPreviewMode] = useState<'svg' | 'image' | 'split'>('svg');
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  const handleTitleChange = (newTitle: string) => {
+    setTitle(newTitle);
+    if (!hasUserSelectedCategory) {
+      setCategory(CircuitSlugGenerator.detectCategory(newTitle, description));
+    }
+    if (!isCustomSlug) {
+      setEnglishSlug(CircuitSlugGenerator.generateEnglishSlug(newTitle));
+    }
+  };
 
   const handleUpdateStep = (index: number, updatedFields: Partial<SocraticStep>) => {
     setSteps((prev) => {
@@ -55,10 +75,13 @@ export const SchematicEditorStage: React.FC<Props> = ({
     }
     setValidationError(null);
 
+    const resolvedSlug = CircuitSlugGenerator.generateEnglishSlug(title, englishSlug);
     const circuitToSave: Circuit = {
-      id: `ai-gen-${Date.now()}`,
+      id: resolvedSlug || `ai-gen-${Date.now()}`,
       title: title.trim(),
       description: description.trim(),
+      category,
+      englishSlug: resolvedSlug,
       svgViewBox: svgViewBox.trim() || '0 0 700 400',
       svgContent: svgContent.trim(),
       symbols,
@@ -79,18 +102,39 @@ export const SchematicEditorStage: React.FC<Props> = ({
       )}
 
       {/* Top Metadata row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div className="md:col-span-2">
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-            Tytuł układu
+            Tytuł układu *
           </label>
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => handleTitleChange(e.target.value)}
             className="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
           />
         </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            Kategoria *
+          </label>
+          <select
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value as CircuitCategory);
+              setHasUserSelectedCategory(true);
+            }}
+            className="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+          >
+            {CIRCUIT_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
             SVG ViewBox
@@ -102,6 +146,35 @@ export const SchematicEditorStage: React.FC<Props> = ({
             className="w-full px-3 py-1.5 text-sm font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
           />
         </div>
+      </div>
+
+      {/* English slug row */}
+      <div className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Krótka nazwa po angielsku (slug w niebieskim polu):
+            </span>
+            {englishSlug && (
+              <span className="font-mono text-[10px] text-cyan-500 dark:text-cyan-300 px-1.5 py-0.2 rounded bg-cyan-500/10 border border-cyan-500/25">
+                {CircuitSlugGenerator.sanitizeToKebabCase(englishSlug)}
+              </span>
+            )}
+          </div>
+          <input
+            type="text"
+            value={englishSlug}
+            onChange={(e) => {
+              setEnglishSlug(e.target.value);
+              setIsCustomSlug(true);
+            }}
+            placeholder="np. vhf-common-base-preamp"
+            className="w-full px-3 py-1 text-xs font-mono rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-cyan-600 dark:text-cyan-300 focus:ring-2 focus:ring-cyan-500"
+          />
+        </div>
+        <p className="text-[11px] text-slate-500 max-w-xs leading-tight">
+          Zastępuje techniczny identyfikator <code className="text-cyan-500 font-mono">ai-gen-...</code> czytelnym skrótem w spisie schematów.
+        </p>
       </div>
 
       {/* Tab Switcher */}

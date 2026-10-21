@@ -11,6 +11,7 @@ import { Layers, Info } from 'lucide-react';
 import type { Circuit, CircuitSummary, CircuitSymbol } from '../types/circuit.types.ts';
 import type { SchematicAnnotation } from '../types/annotation.types.ts';
 import { SymbolParser } from '../utils/symbol-parser.ts';
+import { CircuitSlugGenerator } from '../services/circuit-slug-generator.service.ts';
 import { SymbolShowUpPopover } from './SymbolShowUpPopover.tsx';
 import { useSchematicPanZoom } from '../hooks/useSchematicPanZoom.ts';
 import { SchematicControlsBar } from './schematic/SchematicControlsBar.tsx';
@@ -151,9 +152,19 @@ export const SvgSchematicViewer: React.FC<Props> = ({
 
       {/* 2. Sub-header info: Symbole w kroku */}
       <div className="px-4 sm:px-5 py-2.5 bg-slate-950/40 border-b border-slate-800/60 flex items-center justify-between text-xs text-slate-400 flex-wrap gap-2">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-wrap">
           <Layers className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
           <span className="font-semibold text-slate-200 truncate">{SymbolParser.formatSymbol(circuit.title)}</span>
+          <span className="text-[11px] text-slate-400 font-medium shrink-0">
+            {circuit.category ?? CircuitSlugGenerator.detectCategory(circuit.title, circuit.description)}
+          </span>
+          <span className="text-slate-600 select-none text-xs" aria-hidden="true">·</span>
+          <span
+            className="font-mono text-[10px] text-cyan-300 px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/25 shrink-0"
+            title={`Identyfikator schematu: ${circuit.id}`}
+          >
+            {CircuitSlugGenerator.resolveDisplaySlug(circuit.id, circuit.title, circuit.englishSlug)}
+          </span>
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">

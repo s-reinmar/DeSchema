@@ -39,6 +39,10 @@ export const TokenSafeSvgUploadModal: React.FC<Props> = ({
   const [rawSvgInput, setRawSvgInput] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<CircuitCategory>('Zasilacze');
+  const [hasUserSelectedCategory, setHasUserSelectedCategory] = useState(false);
+  const [englishSlug, setEnglishSlug] = useState('');
+  const [isCustomSlug, setIsCustomSlug] = useState(false);
   const [optimizedResult, setOptimizedResult] = useState<OptimizedSvgResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -53,6 +57,16 @@ export const TokenSafeSvgUploadModal: React.FC<Props> = ({
     const result = svgTokenOptimizer.optimizeSvg(rawSvgInput);
     setOptimizedResult(result);
   }, [rawSvgInput]);
+
+  const handleTitleChange = (newTitle: string) => {
+    setTitle(newTitle);
+    if (!hasUserSelectedCategory) {
+      setCategory(CircuitSlugGenerator.detectCategory(newTitle, description));
+    }
+    if (!isCustomSlug) {
+      setEnglishSlug(CircuitSlugGenerator.generateEnglishSlug(newTitle));
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -69,7 +83,7 @@ export const TokenSafeSvgUploadModal: React.FC<Props> = ({
         setSubmitError(null);
         if (!title) {
           const autoTitle = file.name.replace(/\.svg$/i, '').replace(/[-_]/g, ' ');
-          setTitle(autoTitle.charAt(0).toUpperCase() + autoTitle.slice(1));
+          handleTitleChange(autoTitle.charAt(0).toUpperCase() + autoTitle.slice(1));
         }
       }
     };
@@ -99,7 +113,8 @@ export const TokenSafeSvgUploadModal: React.FC<Props> = ({
     setIsSubmitting(true);
 
     try {
-      const generatedId = `custom-svg-${Date.now()}`;
+      const resolvedSlug = CircuitSlugGenerator.generateEnglishSlug(title, englishSlug);
+      const generatedId = resolvedSlug || `custom-svg-${Date.now()}`;
       const symbols = optimizedResult.report.detectedSymbols.length > 0
         ? optimizedResult.report.detectedSymbols
         : [
@@ -117,6 +132,8 @@ export const TokenSafeSvgUploadModal: React.FC<Props> = ({
         id: generatedId,
         title: title.trim(),
         description: description.trim() || 'Układ wprowadzony przez moduł Token-Safe SVG Upload.',
+        category,
+        englishSlug: resolvedSlug,
         svgViewBox: optimizedResult.viewBox,
         svgContent: optimizedResult.cleanSvgContent,
         isCustom: true,
@@ -336,10 +353,58 @@ export const TokenSafeSvgUploadModal: React.FC<Props> = ({
                 type="text"
                 required
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="np. Zasilacz stabilizowany LM317"
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs text-white placeholder-slate-600 outline-none transition"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Kategoria schematu *
+              </label>
+              <select
+                value={category}
+                onChange={(e) => {
+                  setCategory(e.target.value as CircuitCategory);
+                  setHasUserSelectedCategory(true);
+                }}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs text-white outline-none transition cursor-pointer"
+              >
+                {CIRCUIT_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-300">
+                  Krótka nazwa po angielsku (slug) *
+                </label>
+                {englishSlug && (
+                  <span className="font-mono text-[10px] text-cyan-300 px-1.5 py-0.2 rounded bg-cyan-500/10 border border-cyan-500/25">
+                    {CircuitSlugGenerator.sanitizeToKebabCase(englishSlug)}
+                  </span>
+                )}
+              </div>
+              <input
+                type="text"
+                required
+                value={englishSlug}
+                onChange={(e) => {
+                  setEnglishSlug(e.target.value);
+                  setIsCustomSlug(true);
+                }}
+                placeholder="np. lm317-linear-regulator"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs font-mono text-cyan-300 placeholder-slate-600 outline-none transition"
+              />
+              <p className="text-[10px] text-slate-500 mt-1">
+                Generowany automatycznie z tytułu, edytowalny (wyświetlany w niebieskim polu).
+              </p>
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
